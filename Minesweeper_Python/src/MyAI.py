@@ -23,6 +23,8 @@ class MyAI( AI ):
 		self.zeroes = []
 		self.ones = []
 		self.done = []
+		self.row = rowDimension
+		self.col = colDimension
 		self.x_coord = startX
 		self.y_coord = startY
 		self.current = (startX+1, startY+1)
@@ -93,6 +95,6 @@ class MyAI( AI ):
 		neighbours.append((x - 1, y - 1))
 		neighbours.append((x + 1, y - 1))
 
-		valid_neighbours = [x for x in neighbours if x[0] > 0 and x[0] <= 8 and x[1] > 0 and x[1] <= 8]
+		valid_neighbours = [x for x in neighbours if x[0] > 0 and x[0] <= self.row and x[1] > 0 and x[1] <= self.row]
 
 		return valid_neighbours
