@@ -27,7 +27,7 @@ from typing import List
 class Tile: # NEW
     def __init__(self):
         self.val1 = '*' # Covered/Marked or covered/Unmarked or Label
-        self.val2 = ' ' # Effective Label
+        self.val2 = 0 # Effective Label
         self.val3 = 8   # Number of neighbors that are covered or unmarked
 
 class MyAI( AI ):
@@ -49,11 +49,15 @@ class MyAI( AI ):
 		self.__initializeboard() # NEW
 		self.timestoUncover = (rowDimension * colDimension) - totalMines # NEW
 		self.timesUncovered = 1 # NEW
+		self.__updateboardneighbors(self.current[0], self.current[1])
 
 
 	def getAction(self, number: int) -> "Action Object":
+		if (self.board[self.current[0]-1][self.current[1]-1].val1 == '*'):
+			self.__updateboardneighbors(self.current[0], self.current[1])
 		self.__updateboard(self.current[0], self.current[1], number) # NEW
-		#self.__printboard2() # NEW Uncomment to use (Only if running in debug mode)
+
+		self.__printboard2() # NEW Uncomment to use (Only if running in debug mode)
 		#self.__printboard() # NEW Uncomment to use (Only if running in debug mode)
 		while self.flag:
 			if self.timesUncovered == self.timestoUncover: # new unhardcoded exit condition
@@ -87,25 +91,38 @@ class MyAI( AI ):
 				y = self.current[1]
 				self.neighbours = self.__getNeighbours(x, y)
 			self.neighbours = [x for x in self.neighbours if x not in self.zeroes and x not in self.ones and x not in self.done]
-
-
 			if len(self.zeroes) == 0:
-
-				bomb = (0, 0)
-				for coord in self.ones:
-					x = coord[0]
-					y = coord[1]
-					neighbors = self.__getNeighbours(x,y)
-					neighbors = [x for x in neighbors if x not in self.ones and x not in self.done]
-					if len(neighbors) == 1:
-						bomb = neighbors[0]
-					else:
-						continue
+				for one in self.ones:
+					if self.board[one[0]-1][one[1]-1].val1 == self.board[one[0]-1][one[1]-1].val3:
+						neighbors = self.__getNeighbours(one[0],one[1])
+						print(f'Coordinate is {one}, and neighbors is {neighbors}')
+						for neighbor in neighbors:
+							if self.board[neighbor[0]-1][neighbor[1]-1].val1 == '*':
+								self.board[neighbor[0]-1][neighbor[1]-1].val1 = 'B'
+								self.__updateboardneighbors(neighbor[0],neighbor[1])
+								self.__updateEffectiveLabel(neighbor[0],neighbor[1])
+				self.__printboard2()
 				
-				x = bomb[0]
-				y = bomb[1]
-				self.neighbours = self.__getNeighbours(x, y)
-				self.neighbours = [x for x in self.neighbours if x not in self.ones and x not in self.done]
+
+
+			
+			
+			#if len(self.zeroes) == 0:
+			#	bomb = (0, 0)
+			#	for coord in self.ones:
+			#		x = coord[0]
+			#		y = coord[1]
+			#		neighbors = self.__getNeighbours(x,y)
+			#		neighbors = [x for x in neighbors if x not in self.ones and x not in self.done]
+			#		if len(neighbors) == 1:
+			#			bomb = neighbors[0]
+			#		else:
+			#			continue
+				
+			#	x = bomb[0]
+			#	y = bomb[1]
+			#	self.neighbours = self.__getNeighbours(x, y)
+			#	self.neighbours = [x for x in self.neighbours if x not in self.ones and x not in self.done]
 
 	#####################################################
 	#		         HELPER FUNCTIONS					#
@@ -196,4 +213,18 @@ class MyAI( AI ):
 	# Does not have functionality for changing anything but the label only so far
 	# Coordinate of current tile to uncover must be subtracted by 1 before accessing the board
 	def __updateboard(self, x: int, y: int, label: int) -> None: # NEW
-		self.board[x-1][y-1].val1 = label
+		self.board[x-1][y-1].val1 = int(label)
+		self.board[x-1][y-1].val2 = int(label)
+
+	def __updateboardneighbors(self, x: int, y: int) -> None:
+		neighbors = self.__getNeighbours(x,y)
+		for neighbor in neighbors:
+			self.board[neighbor[0]-1][neighbor[1]-1].val3 -= 1
+	
+	def __updateEffectiveLabel(self, x: int, y: int) -> None:
+		bombneighbors = self.__getNeighbours(x,y)
+		for neighbor in bombneighbors:
+			if self.board[neighbor[0]-1][neighbor[1]-1].val1 == '*':
+				self.board[neighbor[0]-1][neighbor[1]-1].val2 = -1
+			else:
+				self.board[neighbor[0]-1][neighbor[1]-1].val2 -= 1
