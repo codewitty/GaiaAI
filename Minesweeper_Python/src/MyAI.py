@@ -88,7 +88,9 @@ class MyAI( AI ):
 				self.neighbours = self.__getNeighbours(x, y)
 			self.neighbours = [x for x in self.neighbours if x not in self.zeroes and x not in self.ones and x not in self.done]
 
+
 			if len(self.zeroes) == 0:
+
 				bomb = (0, 0)
 				for coord in self.ones:
 					x = coord[0]
