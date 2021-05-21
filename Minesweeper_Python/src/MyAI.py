@@ -93,19 +93,34 @@ class MyAI( AI ):
 			self.neighbours = [x for x in self.neighbours if x not in self.zeroes and x not in self.ones and x not in self.done]
 			if len(self.zeroes) == 0:
 				for one in self.ones:
+					#print(f'Coordinate of {one} has val1 of {self.board[one[0]-1][one[1]-1].val1} and val3 of {self.board[one[0]-1][one[1]-1].val3}')
 					if self.board[one[0]-1][one[1]-1].val1 == self.board[one[0]-1][one[1]-1].val3:
+						#self.__printboard2()
 						neighbors = self.__getNeighbours(one[0],one[1])
-						print(f'Coordinate is {one}, and neighbors is {neighbors}')
+						#print(f'Coordinate is {one}, and neighbors is {neighbors}')
+
 						for neighbor in neighbors:
-							if self.board[neighbor[0]-1][neighbor[1]-1].val1 == '*':
+							if self.board[neighbor[0]-1][neighbor[1]-1].val1 == '*' and self.board[one[0]-1][one[1]-1].val2 != 0:
 								self.board[neighbor[0]-1][neighbor[1]-1].val1 = 'B'
 								self.__updateboardneighbors(neighbor[0],neighbor[1])
 								self.__updateEffectiveLabel(neighbor[0],neighbor[1])
-				self.__printboard2()
 				
+			self.__printboard2()
+
+				#for i in range(len(self.board)):
+				#	for j in range(len(self.board)):
+				#		if int(self.board[i][j].val1) > 0 and self.board[i][j].val2 == 0:
+				#			neighbors = self.__getNeighbours(i+1, j+1)
+				#			for neighbor in neighbors:
+				#				if self.board[neighbor[0]-1][neighbor[1]-1].val1 == '*':
+				#					x = neighbor[0] - 1
+				#					y = neighbor[1] - 1
+				#					action = AI.Action.UNCOVER
+				#					self.timesUncovered += 1
+				#					self.__printboard2()
+				#					return Action(action, x, y)
 
 
-			
 			
 			#if len(self.zeroes) == 0:
 			#	bomb = (0, 0)
