@@ -58,6 +58,7 @@ class MyAI( AI ):
 		self.__updateboard(self.current[0], self.current[1], number) # NEW
 
 		self.__printboard2() # NEW Uncomment to use (Only if running in debug mode)
+		
 		#self.__printboard() # NEW Uncomment to use (Only if running in debug mode)
 		while self.flag:
 			if self.timesUncovered == self.timestoUncover: # new unhardcoded exit condition
@@ -91,6 +92,7 @@ class MyAI( AI ):
 				y = self.current[1]
 				self.neighbours = self.__getNeighbours(x, y)
 			self.neighbours = [x for x in self.neighbours if x not in self.zeroes and x not in self.ones and x not in self.done]
+			
 			if len(self.zeroes) == 0:
 				for one in self.ones:
 					#print(f'Coordinate of {one} has val1 of {self.board[one[0]-1][one[1]-1].val1} and val3 of {self.board[one[0]-1][one[1]-1].val3}')
@@ -105,20 +107,28 @@ class MyAI( AI ):
 								self.__updateboardneighbors(neighbor[0],neighbor[1])
 								self.__updateEffectiveLabel(neighbor[0],neighbor[1])
 				
-			self.__printboard2()
+			#self.__printboard2()
 
-				#for i in range(len(self.board)):
-				#	for j in range(len(self.board)):
-				#		if int(self.board[i][j].val1) > 0 and self.board[i][j].val2 == 0:
-				#			neighbors = self.__getNeighbours(i+1, j+1)
-				#			for neighbor in neighbors:
-				#				if self.board[neighbor[0]-1][neighbor[1]-1].val1 == '*':
-				#					x = neighbor[0] - 1
-				#					y = neighbor[1] - 1
-				#					action = AI.Action.UNCOVER
-				#					self.timesUncovered += 1
-				#					self.__printboard2()
-				#					return Action(action, x, y)
+			for i in range(len(self.board)):
+				#print('We are inside first for loop')
+				for j in range(len(self.board)):
+					#print('We are inside second for loop now')
+					#print('We are inside second for loop now')
+					#print(f'Val1 is {self.board[i][j].val1} and Val2 is {self.board[i][j].val2}')
+					if self.board[i][j].val1 != '*' and int(self.board[i][j].val1) > 0 and self.board[i][j].val2 == 0:
+						print('We are inside the if statement')
+						neighbors = self.__getNeighbours(i+1, j+1)
+						self.neighbors = [x for x in neighbors if self.board[neighbor[0]-1][neighbor[1]-1].val1 == '*']
+						print(neighbors)
+						for neighbor in neighbors:
+							if self.board[neighbor[0]-1][neighbor[1]-1].val1 == '*':
+								x = neighbor[0] - 1
+								y = neighbor[1] - 1
+								print(f'X is {x} and Y is {y}')
+								action = AI.Action.UNCOVER
+								self.timesUncovered += 1
+								#self.__printboard2()
+								return Action(action, x, y)
 
 
 			
