@@ -37,7 +37,6 @@ class MyAI( AI ):
 		self.ones = []
 		self.done = []
 		self.bombs = []
-		self.possible = []
 		self.row = rowDimension
 		self.col = colDimension
 		self.x_coord = startX
@@ -94,18 +93,18 @@ class MyAI( AI ):
 							return Action(action, i, j)
 
 				print('ZEROES DONE')
-				self.possible = self.__generateList()
+				self.ones = self.__generateOnesList()
 				#print(self.ones)
 
-				for pos in self.possible:
+				for one in self.ones:
 					#print("searching")
 					#print(f'Coordinate of {one} has {self.board[one[0]-1][one[1]-1].val1}:{self.board[one[0]-1][one[1]-1].val2}:{self.board[one[0]-1][one[1]-1].val3}')
 
-					if int(self.board[pos[0]-1][pos[1]-1].val1) == int(self.board[pos[0]-1][pos[1]-1].val3):
+					if int(self.board[one[0]-1][one[1]-1].val1) == int(self.board[one[0]-1][one[1]-1].val3):
 						#print(f'These triggered if statement: {one}')
 						#self.__printboard2()
-						neighbors = self.__getneighbors(pos[0],pos[1]) # Neighbors of all tiles where num of label is equal to uncovered tiles
-						print(f'Tile Coordinate is {pos}, and neighbors is {neighbors}')
+						neighbors = self.__getneighbors(one[0],one[1]) # Neighbors of all tiles where num of label is equal to uncovered tiles
+						print(f'Tile Coordinate is {one}, and neighbors is {neighbors}')
 						for neighbor in neighbors: # for each neighbor in those neighbors
 							if self.board[neighbor[0]-1][neighbor[1]-1].val1 == '*' and self.board[neighbor[0]-1][neighbor[1]-1].val2 != 9: # if the neighbor is covered
 								print(f'Bomb Coordinate is {(neighbor[0],neighbor[1])}')
@@ -267,13 +266,13 @@ class MyAI( AI ):
 		for neighbor in neighbors:
 			self.board[neighbor[0]-1][neighbor[1]-1].val3 -= 1
 
-	def __generateList(self) -> None:
-		list1 = []
+	def __generateOnesList(self) -> None:
+		ones = []
 		for i in range(8):
 			for j in range(8):	
-				if (self.board[i][j].val1) != '*' and (self.board[i][j].val1) != 'B':
-					list1.append((i+1,j+1))
-		return list1
+				if (self.board[i][j].val1) == 1:
+					ones.append((i+1,j+1))
+		return ones
 	
 	def __updateEffectiveLabel(self, x: int, y: int) -> None:
 		bombneighbors = self.__getneighbors(x,y)
