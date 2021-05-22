@@ -29,6 +29,7 @@ class Tile: # NEW
         self.val1 = '*' # Covered/Marked or covered/Unmarked or Label
         self.val2 = 0 # Effective Label
         self.val3 = 8   # Number of neighbors that are covered or unmarked
+        self.val4 = 0   # Probability field
 
 class MyAI( AI ):
 
@@ -143,7 +144,17 @@ class MyAI( AI ):
 			
 			self.bombs = []
 			if len(self.neighbors) == 0:
-				self.__printboard2()
+				print(f'Entering Final Fiinal position')
+				maxi = self.__getProbability()
+				print(f'Max position: {maxi}')
+				print(f'Max Probability: {self.board[maxi[0]][maxi[1]].val4}')
+				#self.__printboard2()
+				self.board[maxi[0]][maxi[1]].val1 = 'B'
+				self.__updateboardneighbors(maxi[0],maxi[1])
+				self.__updateEffectiveLabel(maxi[0],maxi[1])
+				self.neighbors = self.__getCoordsofEffectiveZeroes()
+
+			if len(self.neighbors) == 0:
 				return Action(AI.Action.LEAVE)
 
 
@@ -197,6 +208,12 @@ class MyAI( AI ):
 		neighbors = self.__getneighbors(x+1, y+1)
 		covered_neighbors = [i for i in neighbors if self.board[i[0]-1][i[1]-1].val1 == '*']
 		return covered_neighbors
+
+	def __getUncoveredNeighbors(self, x: int, y: int) -> List:
+		""" Return a list of all neighbors of the given co-ordinate"""
+		neighbors = self.__getneighbors(x+1, y+1)
+		uncovered_neighbors = [i for i in neighbors if self.board[i[0]-1][i[1]-1].val1 != '*' and self.board[i[0]-1][i[1]-1].val1 != 'B']
+		return uncovered_neighbors
 
 	# This helper function initializes the board according to the model from Kask's discussion
 	def __initializeboard(self) -> None: # NEW
@@ -296,7 +313,7 @@ class MyAI( AI ):
 	def __updateEffectiveLabel(self, x: int, y: int) -> None:
 		bombneighbors = self.__getneighbors(x,y)
 		for neighbor in bombneighbors:
-			if self.board[neighbor[0]-1][neighbor[1]-1].val1 == '*' or self.board[neighbor[0]-1][neighbor[1]-1].val1 == 'B': # if a bomb's neighbor is uncovered, set to -1
+			if self.board[neighbor[0]-1][neighbor[1]-1].val1 == '*' or self.board[neighbor[0]-1][neighbor[1]-1].val1 == 'B': # if a bomb's neighbor is uncovered, set to 9
 				self.board[neighbor[0]-1][neighbor[1]-1].val2 = 9
 			else:
 				self.board[neighbor[0]-1][neighbor[1]-1].val2 -= 1 # otherwise, decrement effective label of neighbor
@@ -311,3 +328,24 @@ class MyAI( AI ):
 					for neighbor in neighbors:
 						neighborss.append(neighbor)
 		return neighborss
+
+	def __getProbability(self) -> tuple:
+		neighborss = []
+		maxi = [] 
+		maxval = 0
+		for i in range(8):
+			for j in range(8):
+				if (self.board[i][j].val1 == '*'):
+					neighborss = self.__getUncoveredNeighbors(i,j)
+					#print(f'Tile of coordinate {(i+1,j+1)} is covered and we\'re checking for probability')
+					#print(f'Neighbors: {neighborss}')
+					for neighbor in neighborss:
+						self.board[i][j].val4 += self.board[neighbor[0]-1][neighbor[1]-1].val2/self.board[neighbor[0]-1][neighbor[1]-1].val3
+					print(f'Tile of coordinate ({i+1},{j+1}) has probability value = {self.board[i][j].val4}')
+					if self.board[i][j].val4 > maxval:
+						maxval = self.board[i][j].val4
+						#maxi[0] = i
+						#maxi[1] = j
+		#print(f'Max Value: {maxval}')
+		#print(f'Max Co-ords: {maxi}')
+		return maxi
