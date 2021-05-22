@@ -41,85 +41,130 @@ class MyAI( AI ):
 		self.x_coord = startX
 		self.y_coord = startY
 		self.current = (startX+1, startY+1)
-		print(f'We\'re entering the init here: Current Position: {self.current[0]},{self.current[1]}')
 		self.flag = True
 		self.zeroes.append(self.current)
+		self.neighbours = self.__getNeighbours(self.current[0], self.current[1])
 		
 		# Changes I made are below
 		self.__initializeboard() # NEW
 		self.timestoUncover = (rowDimension * colDimension) - totalMines # NEW
 		self.timesUncovered = 1 # NEW
 		self.__updateboardneighbors(self.current[0], self.current[1])
-		self.neighbors = self.__getCoveredNeighbors(self.current[0], self.current[1])
 
 
 	def getAction(self, number: int) -> "Action Object":
 		if (self.board[self.current[0]-1][self.current[1]-1].val1 == '*'):
 			self.__updateboardneighbors(self.current[0], self.current[1])
 		self.__updateboard(self.current[0], self.current[1], number) # NEW
-		print(f'We\'re at the top again: Current Position: {self.current[0]},{self.current[1]}, Current Hint: {number}')
-		print(f'Current Neighbors: {self.neighbors}')
 
 		self.__printboard2() # NEW Uncomment to use (Only if running in debug mode)
 		
 		#self.__printboard() # NEW Uncomment to use (Only if running in debug mode)
 		while self.flag:
-			print(f'Trace 1')
 			if self.timesUncovered == self.timestoUncover: # new unhardcoded exit condition
 				return Action(AI.Action.LEAVE)
 
-			if len(self.neighbors) >= 1:
-				print(f'Inside while loop')
-				self.current = self.neighbors.pop(0)
+			if number == 0 and self.current not in self.zeroes and self.current not in self.done:
+				self.zeroes.append(self.current)
+			elif number == 1 and self.current not in self.ones and self.current not in self.done:
+				self.ones.append(self.current)
+			
+			# The old exit condition
+			#if len(self.done) + len(self.ones) == 24:
+			#	return Action(AI.Action.LEAVE)
+		
+			if len(self.neighbours) >= 1:
+				self.current = self.neighbours.pop(0)
 				x = self.current[0] - 1
 				y = self.current[1] - 1
 				action = AI.Action.UNCOVER
 				self.timesUncovered += 1
-				print(f'About to uncover: {x+1}, {y+1}')
 				return Action(action, x, y)
 
-			else:
-				for i in range(len(self.board)-1):
-					print("searching")
-					for j in range(len(self.board)-1):
-						print(f'Current Position: {i+1},{j+1}')
-						print(f'Hint: {self.board[i+1][j+1].val1} Covered Neighbors: {self.board[i+1][j+1].val3}')
-						if (self.board[i+1][j+1].val1) == 0 and self.board[i+1][j+1].val3 > 0:
-							print(f'FOUND!! Position : ({i+1}, {j+1})')
-							action = AI.Action.UNCOVER
-							self.timesUncovered += 1
-							print(f'About to uncover: {i+1}, {j+1}')
-							self.neighbors = self.__getCoveredNeighbors(i+2, j+2)
-							print(f'Covered Neighbors to uncover: {i+1}, {j+1}')
-							return Action(action, i, j)
+			u = self.zeroes.pop(0)
+			if u not in self.done:
+				self.done.append(u)
+			if len(self.zeroes) >= 1:
+				self.current = self.zeroes[0]
+				if self.current not in self.done:
+					self.done.append(self.current)
+				x = self.current[0]
+				y = self.current[1]
+				self.neighbours = self.__getNeighbours(x, y)
+			self.neighbours = [x for x in self.neighbours if x not in self.zeroes and x not in self.ones and x not in self.done]
+			
+			if len(self.zeroes) == 0:
+				for one in self.ones:
+					#print(f'Coordinate of {one} has val1 of {self.board[one[0]-1][one[1]-1].val1} and val3 of {self.board[one[0]-1][one[1]-1].val3}')
+					if self.board[one[0]-1][one[1]-1].val1 == self.board[one[0]-1][one[1]-1].val3:
+						#self.__printboard2()
+						neighbors = self.__getNeighbours(one[0],one[1])
+						#print(f'Coordinate is {one}, and neighbors is {neighbors}')
+
+						for neighbor in neighbors:
+							if self.board[neighbor[0]-1][neighbor[1]-1].val1 == '*' and self.board[one[0]-1][one[1]-1].val2 != 0:
+								self.board[neighbor[0]-1][neighbor[1]-1].val1 = 'B'
+								self.__updateboardneighbors(neighbor[0],neighbor[1])
+								self.__updateEffectiveLabel(neighbor[0],neighbor[1])
+				
+			#self.__printboard2()
+
+			for i in range(len(self.board)):
+				#print('We are inside first for loop')
+				for j in range(len(self.board)):
+					#print('We are inside second for loop now')
+					#print('We are inside second for loop now')
+					#print(f'Val1 is {self.board[i][j].val1} and Val2 is {self.board[i][j].val2}')
+					if self.board[i][j].val1 != '*' and int(self.board[i][j].val1) > 0 and self.board[i][j].val2 == 0:
+						print('We are inside the if statement')
+						neighbors = self.__getNeighbours(i+1, j+1)
+						self.neighbors = [x for x in neighbors if self.board[neighbor[0]-1][neighbor[1]-1].val1 == '*']
+						print(neighbors)
+						for neighbor in neighbors:
+							if self.board[neighbor[0]-1][neighbor[1]-1].val1 == '*':
+								x = neighbor[0] - 1
+								y = neighbor[1] - 1
+								print(f'X is {x} and Y is {y}')
+								action = AI.Action.UNCOVER
+								self.timesUncovered += 1
+								#self.__printboard2()
+								return Action(action, x, y)
 
 
-
-
+			
+			#if len(self.zeroes) == 0:
+			#	bomb = (0, 0)
+			#	for coord in self.ones:
+			#		x = coord[0]
+			#		y = coord[1]
+			#		neighbors = self.__getNeighbours(x,y)
+			#		neighbors = [x for x in neighbors if x not in self.ones and x not in self.done]
+			#		if len(neighbors) == 1:
+			#			bomb = neighbors[0]
+			#		else:
+			#			continue
+				
+			#	x = bomb[0]
+			#	y = bomb[1]
+			#	self.neighbours = self.__getNeighbours(x, y)
+			#	self.neighbours = [x for x in self.neighbours if x not in self.ones and x not in self.done]
 
 	#####################################################
 	#		         HELPER FUNCTIONS					#
 	#####################################################
-	def __getneighbors(self, x: int, y: int) -> List:
-		""" Return a list of all neighbors of the given co-ordinate"""
-		neighbors = []
-		neighbors.append((x, y + 1))
-		neighbors.append((x, y - 1))
-		neighbors.append((x + 1, y))
-		neighbors.append((x - 1, y))
-		neighbors.append((x + 1, y + 1))
-		neighbors.append((x - 1, y + 1))
-		neighbors.append((x - 1, y - 1))
-		neighbors.append((x + 1, y - 1))
-		valid_neighbors = [x for x in neighbors if x[0] > 0 and x[0] <= self.row and x[1] > 0 and x[1] <= self.row]
-		return valid_neighbors
-
-	def __getCoveredNeighbors(self, x: int, y: int) -> List:
-		""" Return a list of all neighbors of the given co-ordinate"""
-		neighbors = self.__getneighbors(x, y)
-		print(neighbors)
-		covered_neighbors = [i for i in neighbors if self.board[i[0]-1][i[1]-1].val1 == '*']
-		return covered_neighbors
+	def __getNeighbours(self, x: int, y: int) -> List:
+		""" Return a list of all neighbours of the given co-ordinate"""
+		neighbours = []
+		neighbours.append((x, y + 1))
+		neighbours.append((x, y - 1))
+		neighbours.append((x + 1, y))
+		neighbours.append((x - 1, y))
+		neighbours.append((x + 1, y + 1))
+		neighbours.append((x - 1, y + 1))
+		neighbours.append((x - 1, y - 1))
+		neighbours.append((x + 1, y - 1))
+		valid_neighbours = [x for x in neighbours if x[0] > 0 and x[0] <= self.row and x[1] > 0 and x[1] <= self.row]
+		return valid_neighbours
 
 	# This helper function initializes the board according to the model from Kask's discussion
 	def __initializeboard(self) -> None: # NEW
@@ -197,22 +242,14 @@ class MyAI( AI ):
 		self.board[x-1][y-1].val2 = int(label)
 
 	def __updateboardneighbors(self, x: int, y: int) -> None:
-		neighbors = self.__getneighbors(x,y)
+		neighbors = self.__getNeighbours(x,y)
 		for neighbor in neighbors:
 			self.board[neighbor[0]-1][neighbor[1]-1].val3 -= 1
 	
 	def __updateEffectiveLabel(self, x: int, y: int) -> None:
-		bombneighbors = self.__getneighbors(x,y)
+		bombneighbors = self.__getNeighbours(x,y)
 		for neighbor in bombneighbors:
 			if self.board[neighbor[0]-1][neighbor[1]-1].val1 == '*':
 				self.board[neighbor[0]-1][neighbor[1]-1].val2 = -1
 			else:
 				self.board[neighbor[0]-1][neighbor[1]-1].val2 -= 1
-"""
-			if number == 0:
-				print(f'Getting neighbors for {self.current[0]}, {self.current[1]}')
-				self.neighbors = self.__getCoveredNeighbors(self.current[0], self.current[1])
-				print(f'Covered neighbors for current position : {self.neighbors}')
-			else:
-"""
-
