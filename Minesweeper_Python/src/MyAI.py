@@ -50,13 +50,13 @@ class MyAI( AI ):
 		self.timestoUncover = (rowDimension * colDimension) - totalMines # NEW
 		self.timesUncovered = 1 # NEW
 		self.__updateboardneighbors(self.current[0], self.current[1])
-		self.neighbors = self.__getCoveredNeighbors(self.current[0], self.current[1])
+		self.neighbors = self.__getCoveredNeighbors(self.current[0]-1, self.current[1]-1)
 
 
 	def getAction(self, number: int) -> "Action Object":
 		if (self.board[self.current[0]-1][self.current[1]-1].val1 == '*'):
 			self.__updateboardneighbors(self.current[0], self.current[1])
-		self.__updateboard(self.current[0], self.current[1], number) # NEW
+			self.__updateboard(self.current[0], self.current[1], number) # NEW
 		print(f'We\'re at the top again: Current Position: {self.current[0]},{self.current[1]}, Current Hint: {number}')
 		print(f'Current Neighbors: {self.neighbors}')
 
@@ -79,19 +79,63 @@ class MyAI( AI ):
 				return Action(action, x, y)
 
 			else:
-				for i in range(len(self.board)-1):
-					print("searching")
-					for j in range(len(self.board)-1):
-						print(f'Current Position: {i+1},{j+1}')
-						print(f'Hint: {self.board[i+1][j+1].val1} Covered Neighbors: {self.board[i+1][j+1].val3}')
-						if (self.board[i+1][j+1].val1) == 0 and self.board[i+1][j+1].val3 > 0:
-							print(f'FOUND!! Position : ({i+1}, {j+1})')
+				for i in range(8):	
+					for j in range(8):
+						#print('Hello')
+						if (self.board[i][j].val1) == 0 and self.board[i][j].val3 > 0:
+							#print(f'FOUND!! Position : ({i+1}, {j+1})')
 							action = AI.Action.UNCOVER
 							self.timesUncovered += 1
-							print(f'About to uncover: {i+1}, {j+1}')
-							self.neighbors = self.__getCoveredNeighbors(i+2, j+2)
+							#print(f'About to uncover: {i+1}, {j+1}')
+							self.neighbors = self.__getCoveredNeighbors(i, j)
 							print(f'Covered Neighbors to uncover: {i+1}, {j+1}')
 							return Action(action, i, j)
+
+				print('ZEROES DONE')
+				self.ones = self.__generateOnesList()
+				#print(self.ones)
+				print('Gonna print board before if statament now')
+				self.__printboard2()
+				for one in self.ones:
+					#print("searching")
+					print(f'Coordinate of {one} has val1 of {self.board[one[0]-1][one[1]-1].val1} and val3 of {self.board[one[0]-1][one[1]-1].val3}')
+
+					if int(self.board[one[0]-1][one[1]-1].val1) == int(self.board[one[0]-1][one[1]-1].val3):
+						print(f'These triggered if statement: {one}')
+						#self.__printboard2()
+						neighbors = self.__getneighbors(one[0],one[1])
+						#print(f'Coordinate is {one}, and neighbors is {neighbors}')
+						for neighbor in neighbors:
+							if self.board[neighbor[0]-1][neighbor[1]-1].val1 == '*' and self.board[one[0]-1][one[1]-1].val2 != 0:
+								self.board[neighbor[0]-1][neighbor[1]-1].val1 = 'B'
+								self.__updateboardneighbors(neighbor[0],neighbor[1])
+								self.__updateEffectiveLabel(neighbor[0],neighbor[1])
+				print('We are down to the second for loop')
+				
+				#neighbors = self.__getneighbors(i+1, j+1)
+				#self.neighbors = [x for x in neighbors if self.board[x[0]-1][x[1]-1].val1 == '*']
+				#print(neighbors)
+				for one in self.ones:
+					print(one)
+					if self.board[one[0]-1][one[1]-1].val1 == '*' and self.board[one[0]-1][one[1]-1].val2 == 0:
+						x = one[0] - 1
+						y = one[1] - 1
+						#print(f'X is {x} and Y is {y}')
+						self.neighbors.append((x+1,y+1))
+					
+						self.timesUncovered += 1
+						#self.__printboard2()
+				#print('About to uncover right now')	
+				print(self.neighbors)		
+				action = AI.Action.UNCOVER
+				self.current = self.neighbors.pop(0)
+				x = self.current[0] - 1
+				y = self.current[1] - 1
+				self.timesUncovered += 1
+				#print(f'About to uncover: {x+1}, {y+1}')
+				return Action(action, x, y)
+				
+			return Action(AI.Action.LEAVE)
 
 
 
@@ -116,8 +160,7 @@ class MyAI( AI ):
 
 	def __getCoveredNeighbors(self, x: int, y: int) -> List:
 		""" Return a list of all neighbors of the given co-ordinate"""
-		neighbors = self.__getneighbors(x, y)
-		print(neighbors)
+		neighbors = self.__getneighbors(x+1, y+1)
 		covered_neighbors = [i for i in neighbors if self.board[i[0]-1][i[1]-1].val1 == '*']
 		return covered_neighbors
 
@@ -200,6 +243,14 @@ class MyAI( AI ):
 		neighbors = self.__getneighbors(x,y)
 		for neighbor in neighbors:
 			self.board[neighbor[0]-1][neighbor[1]-1].val3 -= 1
+
+	def __generateOnesList(self) -> None:
+		ones = []
+		for i in range(8):
+			for j in range(8):	
+				if (self.board[i][j].val1) == 1:
+					ones.append((i+1,j+1))
+		return ones
 	
 	def __updateEffectiveLabel(self, x: int, y: int) -> None:
 		bombneighbors = self.__getneighbors(x,y)
@@ -208,11 +259,5 @@ class MyAI( AI ):
 				self.board[neighbor[0]-1][neighbor[1]-1].val2 = -1
 			else:
 				self.board[neighbor[0]-1][neighbor[1]-1].val2 -= 1
-"""
-			if number == 0:
-				print(f'Getting neighbors for {self.current[0]}, {self.current[1]}')
-				self.neighbors = self.__getCoveredNeighbors(self.current[0], self.current[1])
-				print(f'Covered neighbors for current position : {self.neighbors}')
-			else:
-"""
+
 
