@@ -47,7 +47,7 @@ import argparse
 from World import World
 from ManualAI import ManualAI
 from RandomAI import RandomAI
-from ZyAI import MyAI
+from MyAI import MyAI
 import time
 
 
