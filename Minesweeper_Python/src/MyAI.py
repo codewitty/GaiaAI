@@ -42,7 +42,7 @@ class MyAI( AI ):
 		self.x_coord = startX
 		self.y_coord = startY
 		self.current = (startX+1, startY+1)
-		print(f'We\'re entering the init here: Current Position: {self.current[0]},{self.current[1]}')
+		#print(f'We\'re entering the init here: Current Position: {self.current[0]},{self.current[1]}')
 		self.flag = True
 		self.zeroes.append(self.current)
 		
@@ -58,25 +58,25 @@ class MyAI( AI ):
 		if (self.board[self.current[0]-1][self.current[1]-1].val1 == '*'):
 			self.__updateboardneighbors(self.current[0], self.current[1])
 			self.__updateboard(self.current[0], self.current[1], number) # NEW
-		print(f'We\'re at the top again: Current Position: {self.current[0]},{self.current[1]}, Current Hint: {number}')
-		print(f'Current Neighbors: {self.neighbors}')
+		#print(f'We\'re at the top again: Current Position: {self.current[0]},{self.current[1]}, Current Hint: {number}')
+		#print(f'Current Neighbors: {self.neighbors}')
 
 		self.__printboard2() # NEW Uncomment to use (Only if running in debug mode)
 		
 		#self.__printboard() # NEW Uncomment to use (Only if running in debug mode)
 		while self.flag:
-			print(f'Trace 1')
+			#print(f'Trace 1')
 			#if self.timesUncovered == self.timestoUncover: # new unhardcoded exit condition
 			#	return Action(AI.Action.LEAVE)
 
 			if len(self.neighbors) >= 1:
-				print(f'Inside while loop')
+				#print(f'Inside while loop')
 				self.current = self.neighbors.pop(0)
 				x = self.current[0] - 1
 				y = self.current[1] - 1
 				action = AI.Action.UNCOVER
 				self.timesUncovered += 1
-				print(f'About to uncover: {x+1}, {y+1}')
+				#print(f'About to uncover: {x+1}, {y+1}')
 				return Action(action, x, y)
 
 			else:
@@ -89,10 +89,10 @@ class MyAI( AI ):
 							self.timesUncovered += 1
 							#print(f'About to uncover: {i+1}, {j+1}')
 							self.neighbors = self.__getCoveredNeighbors(i, j)
-							print(f'Covered Neighbors to uncover: {i+1}, {j+1}')
+							#print(f'Covered Neighbors to uncover: {i+1}, {j+1}')
 							return Action(action, i, j)
 
-				print('ZEROES DONE')
+				#print('ZEROES DONE')
 				self.ones = self.__generateOnesList()
 				#print(self.ones)
 
@@ -104,10 +104,10 @@ class MyAI( AI ):
 						#print(f'These triggered if statement: {one}')
 						#self.__printboard2()
 						neighbors = self.__getneighbors(one[0],one[1]) # Neighbors of all tiles where num of label is equal to uncovered tiles
-						print(f'Tile Coordinate is {one}, and neighbors is {neighbors}')
+						#print(f'Tile Coordinate is {one}, and neighbors is {neighbors}')
 						for neighbor in neighbors: # for each neighbor in those neighbors
 							if self.board[neighbor[0]-1][neighbor[1]-1].val1 == '*' and self.board[neighbor[0]-1][neighbor[1]-1].val2 != 9: # if the neighbor is covered
-								print(f'Bomb Coordinate is {(neighbor[0],neighbor[1])}')
+								#print(f'Bomb Coordinate is {(neighbor[0],neighbor[1])}')
 								self.board[neighbor[0]-1][neighbor[1]-1].val1 = 'B' # mark it as a bomb
 								self.bombs.append((neighbor[0],neighbor[1])) # add coordinate of bomb to bomb list
 				
@@ -115,18 +115,37 @@ class MyAI( AI ):
 				for bomb in self.bombs:	 # now update neighbors of each bomb coordinate
 					self.__updateboardneighbors(bomb[0],bomb[1])
 					self.__updateEffectiveLabel(bomb[0],bomb[1])
-				print('Gonna print board statament now')
-				self.__printboard2()
+				#print('Gonna print board statament now')
+				#self.__printboard2()
 				#print('We are down to the second for loop')
-				
+			
+
+
 				#neighbors = self.__getneighbors(i+1, j+1)
 				#self.neighbors = [x for x in neighbors if self.board[x[0]-1][x[1]-1].val1 == '*']
 				#print(neighbors)
 				
 			self.neighbors = self.__getCoordsofEffectiveZeroes()
+			if len(self.neighbors) == 0:
+				for i in range(8):
+					for j in range(8):
+						if self.board[i][j].val2 == self.board[i][j].val3:
+							n = self.__getneighbors(i+1,j+1)
+							for neighbor in n:
+								if self.board[neighbor[0]-1][neighbor[1]-1].val1 == '*':
+									self.board[neighbor[0]-1][neighbor[1]-1].val1 = 'B'
+									self.__updateboardneighbors(neighbor[0],neighbor[1])
+									self.__updateEffectiveLabel(neighbor[0],neighbor[1])
+									self.neighbors = self.__getCoordsofEffectiveZeroes()
+									#self.__printboard2()
+
+			
+			
 			self.bombs = []
 			if len(self.neighbors) == 0:
+				self.__printboard2()
 				return Action(AI.Action.LEAVE)
+
 
 			'''
 			for one in self.ones:
@@ -277,7 +296,7 @@ class MyAI( AI ):
 	def __updateEffectiveLabel(self, x: int, y: int) -> None:
 		bombneighbors = self.__getneighbors(x,y)
 		for neighbor in bombneighbors:
-			if self.board[neighbor[0]-1][neighbor[1]-1].val1 == '*': # if a bomb's neighbor is uncovered, set to -1
+			if self.board[neighbor[0]-1][neighbor[1]-1].val1 == '*' or self.board[neighbor[0]-1][neighbor[1]-1].val1 == 'B': # if a bomb's neighbor is uncovered, set to -1
 				self.board[neighbor[0]-1][neighbor[1]-1].val2 = 9
 			else:
 				self.board[neighbor[0]-1][neighbor[1]-1].val2 -= 1 # otherwise, decrement effective label of neighbor
