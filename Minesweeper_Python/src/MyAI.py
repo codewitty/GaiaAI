@@ -35,7 +35,7 @@ class MyAI( AI ):
 
 	def __init__(self, rowDimension, colDimension, totalMines, startX, startY):
 		self.zeroes = []
-		self.f = True
+		self.f = False
 		self.total = 0
 		self.ones = []
 		self.done = []
@@ -61,27 +61,28 @@ class MyAI( AI ):
 			self.__updateboardneighbors(self.current[0], self.current[1])
 			self.__updateboard(self.current[0], self.current[1], number) # NEW
 		#print(f'We\'re at the top again: Current Position: {self.current[0]},{self.current[1]}, Current Hint: {number}')
-		#print(f'Current Neighbors: {self.neighbors}')
+		if self.f:
+			print(f'Current Neighbors: {self.neighbors}')
 
 		if self.f:
-			self.__printboard2() # NEW Uncomment to use (Only if running in debug mode)
+			self.__printboard2() 
 		
 		#self.__printboard() # NEW Uncomment to use (Only if running in debug mode)
 		while self.flag:
-			#if self.timesUncovered == self.timestoUncover: # new unhardcoded exit condition
-			#	return Action(AI.Action.LEAVE)
 			self.total = 0
-			for i in range(8):	
-				for j in range(8):
+			for i in range(self.row):	
+				for j in range(self.row):
 					if self.board[i][j].val1 != '*':
 						self.total += 1
 			if self.total == self.timestoUncover: # new unhardcoded exit condition
-				#print(f'Total: {self.total}')
-				#print(f'To Uncover: {self.timestoUncover}')
+				if self.f:
+					print(f'Total: {self.total}')
+					print(f'To Uncover: {self.timestoUncover}')
 				return Action(AI.Action.LEAVE)
 
 			if len(self.neighbors) >= 1:
-				#print(f'Inside while loop')
+				if self.f:
+					print(f'Inside while loop')
 				self.current = self.neighbors.pop(0)
 				x = self.current[0] - 1
 				y = self.current[1] - 1
@@ -92,8 +93,8 @@ class MyAI( AI ):
 				return Action(action, x, y)
 
 			else:
-				for i in range(8):	
-					for j in range(8):
+				for i in range(self.row):	
+					for j in range(self.row):
 						if (self.board[i][j].val1) == 0 and self.board[i][j].val3 > 0:
 							if self.f:
 								print(f'FOUND!! Position : ({i+1}, {j+1})')
@@ -101,12 +102,15 @@ class MyAI( AI ):
 							self.timesUncovered += 1
 							#print(f'About to uncover: {i+1}, {j+1}')
 							self.neighbors = self.__getCoveredNeighbors(i, j)
-							#print(f'Covered Neighbors to uncover: {i+1}, {j+1}')
+							if self.f:
+								print(f'Covered Neighbors to uncover: {i+1}, {j+1}')
 							return Action(action, i, j)
 
-				#print('ZEROES DONE')
+				if self.f:
+					print('ZEROES DONE')
 				self.ones = self.__generateOnesList()
-				#print(self.ones)
+				if self.f:
+					print(self.ones)
 
 				for one in self.ones:
 					#print("searching")
@@ -139,8 +143,8 @@ class MyAI( AI ):
 				
 			self.neighbors = self.__getCoordsofEffectiveZeroes()
 			if len(self.neighbors) == 0:
-				for i in range(8):
-					for j in range(8):
+				for i in range(self.row):
+					for j in range(self.row):
 						if self.board[i][j].val2 == self.board[i][j].val3:
 							n = self.__getneighbors(i+1,j+1)
 							for neighbor in n:
@@ -291,8 +295,8 @@ class MyAI( AI ):
 
 	def __generateOnesList(self) -> None:
 		ones = []
-		for i in range(8):
-			for j in range(8):	
+		for i in range(self.row):
+			for j in range(self.row):	
 				if (self.board[i][j].val1) == 1:
 					ones.append((i+1,j+1))
 		return ones
@@ -307,8 +311,8 @@ class MyAI( AI ):
 
 	def __getCoordsofEffectiveZeroes(self) -> None:
 		neighborss = []
-		for i in range(8):
-			for j in range(8):
+		for i in range(self.row):
+			for j in range(self.row):
 				if (self.board[i][j].val1 != 'B' and self.board[i][j].val1 != '*' and self.board[i][j].val2 == 0):
 					neighbors = self.__getCoveredNeighbors(i,j)
 					#print(f'Tile of coordinate {(i+1,j+1)} has neighbors of {neighbors}')
@@ -321,8 +325,8 @@ class MyAI( AI ):
 		neighborss = []
 		maxi = [] 
 		maxval = 0
-		for i in range(8):
-			for j in range(8):
+		for i in range(self.row):
+			for j in range(self.row):
 				if (self.board[i][j].val1 == '*'):
 					neighborss = self.__getUncoveredNeighbors(i,j)
 					#print(f'Tile of coordinate {(i+1,j+1)} is covered and we\'re checking for probability')
