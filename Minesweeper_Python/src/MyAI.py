@@ -35,6 +35,8 @@ class MyAI( AI ):
 
 	def __init__(self, rowDimension, colDimension, totalMines, startX, startY):
 		self.zeroes = []
+		self.f = True
+		self.total = 0
 		self.ones = []
 		self.done = []
 		self.bombs = []
@@ -43,13 +45,12 @@ class MyAI( AI ):
 		self.x_coord = startX
 		self.y_coord = startY
 		self.current = (startX+1, startY+1)
-		#print(f'We\'re entering the init here: Current Position: {self.current[0]},{self.current[1]}')
 		self.flag = True
 		self.zeroes.append(self.current)
 		
 		# Changes I made are below
 		self.__initializeboard() # NEW
-		self.timestoUncover = (rowDimension * colDimension) - totalMines # NEW
+		self.timestoUncover = (rowDimension * colDimension)
 		self.timesUncovered = 1 # NEW
 		self.__updateboardneighbors(self.current[0], self.current[1])
 		self.neighbors = self.__getCoveredNeighbors(self.current[0]-1, self.current[1]-1)
@@ -62,13 +63,22 @@ class MyAI( AI ):
 		#print(f'We\'re at the top again: Current Position: {self.current[0]},{self.current[1]}, Current Hint: {number}')
 		#print(f'Current Neighbors: {self.neighbors}')
 
-		self.__printboard2() # NEW Uncomment to use (Only if running in debug mode)
+		if self.f:
+			self.__printboard2() # NEW Uncomment to use (Only if running in debug mode)
 		
 		#self.__printboard() # NEW Uncomment to use (Only if running in debug mode)
 		while self.flag:
-			#print(f'Trace 1')
 			#if self.timesUncovered == self.timestoUncover: # new unhardcoded exit condition
 			#	return Action(AI.Action.LEAVE)
+			self.total = 0
+			for i in range(8):	
+				for j in range(8):
+					if self.board[i][j].val1 != '*':
+						self.total += 1
+			if self.total == self.timestoUncover: # new unhardcoded exit condition
+				#print(f'Total: {self.total}')
+				#print(f'To Uncover: {self.timestoUncover}')
+				return Action(AI.Action.LEAVE)
 
 			if len(self.neighbors) >= 1:
 				#print(f'Inside while loop')
@@ -77,15 +87,16 @@ class MyAI( AI ):
 				y = self.current[1] - 1
 				action = AI.Action.UNCOVER
 				self.timesUncovered += 1
-				#print(f'About to uncover: {x+1}, {y+1}')
+				if self.f:
+					print(f'About to uncover: {x+1}, {y+1}')
 				return Action(action, x, y)
 
 			else:
 				for i in range(8):	
 					for j in range(8):
-						#print('Hello')
 						if (self.board[i][j].val1) == 0 and self.board[i][j].val3 > 0:
-							#print(f'FOUND!! Position : ({i+1}, {j+1})')
+							if self.f:
+								print(f'FOUND!! Position : ({i+1}, {j+1})')
 							action = AI.Action.UNCOVER
 							self.timesUncovered += 1
 							#print(f'About to uncover: {i+1}, {j+1}')
@@ -144,46 +155,22 @@ class MyAI( AI ):
 			
 			self.bombs = []
 			if len(self.neighbors) == 0:
-				print(f'Entering Final Fiinal position')
+				#print(f'Entering Final Fiinal position')
 				maxi = self.__getProbability()
-				print(f'Max position: {maxi}')
-				print(f'Max Probability: {self.board[maxi[0]][maxi[1]].val4}')
+				#print(f'Max position: {maxi}')
+				#print(f'Max Probability: {self.board[maxi[0]][maxi[1]].val4}')
 				#self.__printboard2()
 				self.board[maxi[0]][maxi[1]].val1 = 'B'
-				self.__updateboardneighbors(maxi[0],maxi[1])
-				self.__updateEffectiveLabel(maxi[0],maxi[1])
+				self.__updateboardneighbors(maxi[0]+1,maxi[1]+1)
+				self.__updateEffectiveLabel(maxi[0]+1,maxi[1]+1)
+				#self.__printboard2()
 				self.neighbors = self.__getCoordsofEffectiveZeroes()
+				if self.f:
+					print(self.neighbors)
 
 			if len(self.neighbors) == 0:
+				print("HEREEEEEEEE")
 				return Action(AI.Action.LEAVE)
-
-
-			'''
-			for one in self.ones:
-				print(one)
-				if self.board[one[0]-1][one[1]-1].val1 == '*' and self.board[one[0]-1][one[1]-1].val2 == 0:
-					x = one[0] - 1
-					y = one[1] - 1
-					#print(f'X is {x} and Y is {y}')
-					self.neighbors.append((x+1,y+1))
-				
-					self.timesUncovered += 1
-					#self.__printboard2()
-			#print('About to uncover right now')	
-			print(self.neighbors)		
-			action = AI.Action.UNCOVER
-			self.current = self.neighbors.pop(0)
-			x = self.current[0] - 1
-			y = self.current[1] - 1
-			self.timesUncovered += 1
-			#print(f'About to uncover: {x+1}, {y+1}')
-			return Action(action, x, y)
-			'''
-				
-		
-
-
-
 
 
 	#####################################################
@@ -326,7 +313,8 @@ class MyAI( AI ):
 					neighbors = self.__getCoveredNeighbors(i,j)
 					#print(f'Tile of coordinate {(i+1,j+1)} has neighbors of {neighbors}')
 					for neighbor in neighbors:
-						neighborss.append(neighbor)
+						if neighbor not in neighborss:
+							neighborss.append(neighbor)
 		return neighborss
 
 	def __getProbability(self) -> tuple:
@@ -341,12 +329,12 @@ class MyAI( AI ):
 					#print(f'Neighbors: {neighborss}')
 					for neighbor in neighborss:
 						self.board[i][j].val4 += self.board[neighbor[0]-1][neighbor[1]-1].val2/self.board[neighbor[0]-1][neighbor[1]-1].val3
-					print(f'Tile of coordinate ({i+1},{j+1}) has probability value = {self.board[i][j].val4}')
+					#print(f'Tile of coordinate ({i+1},{j+1}) has probability value = {self.board[i][j].val4}')
 					if self.board[i][j].val4 > maxval:
 						maxval = self.board[i][j].val4
 						maxi.clear()
 						maxi.append(i)
 						maxi.append(j)
-		print(f'Max Value: {maxval}')
-		print(f'Max Co-ords: {maxi}')
+		#print(f'Max Value: {maxval}')
+		#print(f'Max Co-ords: {maxi}')
 		return maxi
