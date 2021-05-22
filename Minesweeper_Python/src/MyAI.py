@@ -344,8 +344,9 @@ class MyAI( AI ):
 					print(f'Tile of coordinate ({i+1},{j+1}) has probability value = {self.board[i][j].val4}')
 					if self.board[i][j].val4 > maxval:
 						maxval = self.board[i][j].val4
-						#maxi[0] = i
-						#maxi[1] = j
-		#print(f'Max Value: {maxval}')
-		#print(f'Max Co-ords: {maxi}')
+						maxi.clear()
+						maxi.append(i)
+						maxi.append(j)
+		print(f'Max Value: {maxval}')
+		print(f'Max Co-ords: {maxi}')
 		return maxi
