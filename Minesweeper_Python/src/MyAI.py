@@ -35,7 +35,7 @@ class MyAI( AI ):
 
 	def __init__(self, rowDimension, colDimension, totalMines, startX, startY):
 		self.zeroes = []
-		self.f = True   # Set to False to remove all comments
+		self.f = False   # Set to False to remove all comments
 		self.total = 0
 		self.ones = []
 		self.bombs = []
@@ -55,7 +55,8 @@ class MyAI( AI ):
 
 
 	def getAction(self, number: int) -> "Action Object":
-		print(f'Current val:{self.current[0], self.current[1]} Current Value: {number}')
+		if self.f:
+			print(f'Current val:{self.current[0], self.current[1]} Current Value: {number}')
 		if (self.board[self.current[0]-1][self.current[1]-1].val1 == '*'):
 			if self.f:
 				print(f'Updating Neighbors of: {(self.current[0], self.current[1])}')
@@ -173,7 +174,8 @@ class MyAI( AI ):
 					print(f'New Positions to uncover: {self.neighbors}')
 
 			if len(self.neighbors) == 0:
-				print("HEREEEEEEEE")
+				if self.f:
+					print(f'Now in final self.neighbors before exit')
 				return Action(AI.Action.LEAVE)
 
 
