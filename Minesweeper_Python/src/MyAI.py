@@ -172,6 +172,8 @@ class MyAI( AI ):
 				#print("Checking game board before probability")
 				#self.__printboard2()
 				maxi = self.__getProbability()
+				if maxi == 999: # This is new (means that if there are no covered tiles left, we just leave)
+					return Action(AI.Action.LEAVE)
 				if self.f:
 					print(f'Max position: {maxi}') # Issue in probability part
 					print(f'Max Probability: {self.board[maxi[0]][maxi[1]].val4}') # maxi empty
@@ -367,10 +369,13 @@ class MyAI( AI ):
 
 		if len(maxi) == 0: # if wall of bombs surround covered tiles,we must do random
 			allCovered = self.__getCoveredTiles()
+			if len(allCovered) == 0: # No covered tiles left
+				return 999
 			#print(f'Covered tiles are {allCovered} from probability')
-			randomval = random.randint(0,len(allCovered)-1)
-			maxi.append(allCovered[0][0]-1)
-			maxi.append(allCovered[0][1]-1)
+			else:
+				randomval = random.randint(0,len(allCovered)-1)
+				maxi.append(allCovered[0][0]-1)
+				maxi.append(allCovered[0][1]-1)
 			
 		return maxi
 
