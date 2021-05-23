@@ -35,10 +35,9 @@ class MyAI( AI ):
 
 	def __init__(self, rowDimension, colDimension, totalMines, startX, startY):
 		self.zeroes = []
-		self.f = True
+		self.f = True   # Set to False to remove all comments
 		self.total = 0
 		self.ones = []
-		self.done = []
 		self.bombs = []
 		self.row = rowDimension
 		self.col = colDimension
@@ -56,6 +55,7 @@ class MyAI( AI ):
 
 
 	def getAction(self, number: int) -> "Action Object":
+		print(f'Current val:{self.current[0], self.current[1]} Current Value: {number}')
 		if (self.board[self.current[0]-1][self.current[1]-1].val1 == '*'):
 			if self.f:
 				print(f'Updating Neighbors of: {(self.current[0], self.current[1])}')
@@ -104,6 +104,7 @@ class MyAI( AI ):
 							if self.f:
 								print(f'About to uncover: {new[0]}, {new[1]}')
 								print(f'Covered Neighbors to uncover: {self.neighbors}')
+							self.current = new
 							return Action(action, new[0]-1, new[1]-1)
 
 				if self.f:
@@ -197,6 +198,8 @@ class MyAI( AI ):
 		""" Return a list of all neighbors of the given co-ordinate"""
 		neighbors = self.__getneighbors(x+1, y+1)
 		covered_neighbors = [i for i in neighbors if self.board[i[0]-1][i[1]-1].val1 == '*']
+		if self.f:
+			print(f'Covered Neighbors inside function:{covered_neighbors}')
 		return covered_neighbors
 
 	def __getUncoveredNeighbors(self, x: int, y: int) -> List:
@@ -278,7 +281,8 @@ class MyAI( AI ):
 	# Coordinate of current tile to uncover must be subtracted by 1 before accessing the board
 	def __updateboard(self, x: int, y: int, label: int) -> None: # NEW
 		self.board[x-1][y-1].val1 = int(label)
-		
+		if self.f:
+			print(f'Printing updated val1 for {x,y}: {self.board[x-1][y-1].val1}')
 		num_bombs = 0
 		neighbors = self.__getneighbors(x,y)
 		for neighbor in neighbors:
