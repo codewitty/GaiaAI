@@ -15,31 +15,26 @@
 from AI import AI
 from Action import Action
 from typing import List
+import random # new
 
-# CHANGES MADE #
-################
-# Tile class added so that we can add tile objects into our board model
-# Board model created and initialized
-# Board model kind of updated as we uncover
-# Board model can be printed out in two different formats (printboard() or printboard2())
-# Exit condition made to be unhardcoded
+# This is the final copy of Draft AI with debugging comments
 
 class Tile: # NEW
     def __init__(self):
         self.val1 = '*' # Covered/Marked or covered/Unmarked or Label
-        self.val2 = ' ' # Effective Label
+        self.val2 = 0 # Effective Label
         self.val3 = 8   # Number of neighbors that are covered or unmarked
+        self.val4 = 0   # Probability field
 
 class MyAI( AI ):
 
 	def __init__(self, rowDimension, colDimension, totalMines, startX, startY):
 		self.zeroes = []
-		keys = [0,1,2,3,5,6,7,8]
-		self.boardTracker = {key: [] for key in keys}
+		self.f = False   # Set to False to remove all comments
+		self.total = 0
 		self.ones = []
-		self.uncovered = []
-		self.done = []      # No uncovered neighbors remaining
-		self.mines = []      # Positions with mines
+		self.bombs = []
+		self.done = []
 		self.row = rowDimension
 		self.col = colDimension
 		self.x_coord = startX
@@ -47,87 +42,351 @@ class MyAI( AI ):
 		self.current = (startX+1, startY+1)
 		self.flag = True
 		self.zeroes.append(self.current)
-		self.boardTracker[0].append(self.current)
-		self.neighbours = self.__getNeighbours(self.current[0], self.current[1])
-		self.all = self.__generateAll(rowDimension, colDimension)
-		self.total = (rowDimension * colDimension)
-		self.totalMines = totalMines
-		self.all.remove(self.current)
+		
+		# Changes I made are below
+		self.__initializeboard() # NEW
+		self.timestoUncover = (rowDimension * colDimension)
+		self.__updateboardneighbors(self.current[0], self.current[1])
+		self.neighbors = self.__getCoveredNeighbors(self.current[0]-1, self.current[1]-1)
+
 
 	def getAction(self, number: int) -> "Action Object":
-		print(self.all)
-		print(self.boardTracker)
+		if self.f:
+			print(f'Current val:{self.current[0], self.current[1]} Current Value: {number}')
+		if (self.board[self.current[0]-1][self.current[1]-1].val1 == '*'):
+			if self.f:
+				print(f'Updating Neighbors of: {(self.current[0], self.current[1])}')
+			self.__updateboardneighbors(self.current[0], self.current[1])
+			self.__updateboard(self.current[0], self.current[1], number) # NEW
+		if self.f:
+			print(f'Current Neighbors: {self.neighbors}')
 
-		while self.flag:
-			if self.totalMines + len(self.uncovered) == self.total:
+		if self.f:
+			self.__printboard2() 
+		
+		#self.__printboard() # NEW Uncomment to use (Only if running in debug mode)
+		while self.flag: 
+			self.total = 0
+			for i in range(self.row):	
+				for j in range(self.row):
+					if self.board[i][j].val1 != '*':
+						self.total += 1
+			if self.total == self.timestoUncover: # new unhardcoded exit condition
+				if self.f:
+					print(f'Total: {self.total}')
+					print(f'To Uncover: {self.timestoUncover}')
 				return Action(AI.Action.LEAVE)
 
-			if number == 0 and self.current not in self.zeroes and self.current not in self.uncovered:
-				self.zeroes.append(self.current)
-				try:
-					self.all.remove(self.current)
-				except ValueError:
-					pass  # do nothing!
-			elif number == 1 and self.current not in self.ones and self.current not in self.uncovered:
-				self.ones.append(self.current)
-				try:
-					self.all.remove(self.current)
-				except ValueError:
-					pass  # do nothing!
-			
-			if len(self.neighbours) >= 1:
-				self.current = self.neighbours.pop(0)
+			# Uncovers anyone in self.neighbors
+			if len(self.neighbors) >= 1:
+				if self.f:
+					print(f'Inside while loop')
+				self.current = self.neighbors.pop(0)
 				x = self.current[0] - 1
 				y = self.current[1] - 1
 				action = AI.Action.UNCOVER
+				if self.f:
+					print(f'About to uncover: {x+1}, {y+1}')
+				self.done.append(self.current)
 				return Action(action, x, y)
 
-			u = self.zeroes.pop(0)
-			if u not in self.uncovered:
-				self.uncovered.append(u)
-				self.all.remove(self.current)
-			if len(self.zeroes) >= 1:
-				self.current = self.zeroes[0]
-				if self.current not in self.uncovered:
-					self.uncovered.append(self.current)
-				x = self.current[0]
-				y = self.current[1]
-				self.neighbours = self.__getNeighbours(x, y)
-			self.neighbours = [x for x in self.neighbours if x not in self.zeroes and x not in self.ones and x not in self.uncovered]
+			# If self.neighbors is empty we must use algorithms to add more to uncover
+			# Below clears every 0
+			else:
+				for i in range(self.row):	
+					for j in range(self.row):
+						if self.board[i][j].val1 == 0 and self.board[i][j].val3 > 0:
+							if self.f:
+								print(f'FOUND A NEW ZERO!! Position : ({i+1}, {j+1})')
+							action = AI.Action.UNCOVER
+							self.neighbors = self.__getCoveredNeighbors(i, j)
+							if len(self.neighbors) >= 1:
+								new = self.neighbors.pop(0)
+							if self.f:
+								print(f'About to uncover: {new[0]}, {new[1]}')
+								print(f'Covered Neighbors to uncover: {self.neighbors}')
+							self.current = new
+							return Action(action, new[0]-1, new[1]-1)
 
+				# Below clears marks bombs around ones and updates
+				if self.f:
+					print('ZEROES DONE')
+				self.ones = self.__generateOnesList()
+				if self.f:
+					print(f'Ones List after zeroes are done: {self.ones}')
 
-			if len(self.zeroes) == 0:
-				for position in self.uncovered:
-					self.uncovered.append(self.current)
+				for one in self.ones:
+					if self.f:
+						print(f'Coordinate of {one} has {self.board[one[0]-1][one[1]-1].val1}:{self.board[one[0]-1][one[1]-1].val2}:{self.board[one[0]-1][one[1]-1].val3}')
+
+					if int(self.board[one[0]-1][one[1]-1].val1) == int(self.board[one[0]-1][one[1]-1].val3):
+						if self.f:
+							print(f'These triggered if statement: {one}')
+							self.__printboard2()
+						neighbors = self.__getneighbors(one[0],one[1]) # Neighbors of all tiles where num of label is equal to uncovered tiles
+						#print(f'Tile Coordinate is {one}, and neighbors is {neighbors}')
+						#print(f'CHECKING')
+						for neighbor in neighbors: # for each neighbor in those neighbors
+							if self.board[neighbor[0]-1][neighbor[1]-1].val1 == '*' and self.board[neighbor[0]-1][neighbor[1]-1].val2 != 9: # if the neighbor is covered
+								if self.f:
+									print(f'Bomb Coordinate is {(neighbor[0],neighbor[1])}')
+								self.board[neighbor[0]-1][neighbor[1]-1].val1 = 'B' # mark it as a bomb
+								self.bombs.append((neighbor[0],neighbor[1])) # add coordinate of bomb to bomb list
+				
+				# now all bombs have been appended to bomb list
+				for bomb in self.bombs:	 # now update neighbors of each bomb coordinate
+					self.__updateboardneighbors(bomb[0],bomb[1])
+					self.__updateEffectiveLabel(bomb[0],bomb[1])
+				if self.f:
+					print('Gonna print board statement now')
+					self.__printboard2()
+
+			# now that bombs around ones are marked, we want to uncover all tles with effective label 0	
+			self.neighbors = self.__getCoordsofEffectiveZeroes()
+			#print(f'Coords of all effective zeroes are {self.neighbors}')
+			if len(self.neighbors) == 0:
+				if self.f:
+					print('Finding effective zero candidates')
+				for i in range(self.row):
+					for j in range(self.row):
+						if self.board[i][j].val2 == self.board[i][j].val3: # if effective label of any tile is equal to uncovered neighbors
+							n = self.__getneighbors(i+1,j+1)
+							for neighbor in n: # for neighbor in neighbors of any tile that has effective label equal to uncovered neighbors
+								if self.board[neighbor[0]-1][neighbor[1]-1].val1 == '*': # if the neighbor is covered it is a bomb
+									self.board[neighbor[0]-1][neighbor[1]-1].val1 = 'B'
+									self.__updateboardneighbors(neighbor[0],neighbor[1]) # so we update the labels of everyone around that bomb
+									self.__updateEffectiveLabel(neighbor[0],neighbor[1])
+									self.neighbors = self.__getCoordsofEffectiveZeroes() # after updating, we now get more effective zeroes
+									#self.__printboard2()
+
+			
+			# probability check 
+			self.bombs = []
+			if len(self.neighbors) == 0:
+				#print("Checking game board before probability")
+				#self.__printboard2()
+				maxi = self.__getProbability()
+				if maxi == 999: # This is new (means that if there are no covered tiles left, we just leave)
+					return Action(AI.Action.LEAVE)
+				if self.f:
+					print(f'Max position: {maxi}') # Issue in probability part
+					print(f'Max Probability: {self.board[maxi[0]][maxi[1]].val4}') # maxi empty
+				#self.__printboard2()
+				self.board[maxi[0]][maxi[1]].val1 = 'B'
+				self.__updateboardneighbors(maxi[0]+1,maxi[1]+1)
+				self.__updateEffectiveLabel(maxi[0]+1,maxi[1]+1)
+				#print("Checking game board after probability check")
+				#self.__printboard2()
+				self.neighbors = self.__getCoordsofEffectiveZeroes()
+				if self.f:
+					print(f'New Positions to uncover: {self.neighbors}')
+			if len(self.neighbors) == 0:
+				#print("FINAL CHECK")
+				finalcheck = self.__getCoveredTiles()
+				if len(finalcheck) >= 1:
+					self.neighbors.append(finalcheck.pop(0))
+
+			if len(self.neighbors) == 0:
+
+				#if self.f:
+					#print(f'Now in final self.neighbors before exit')
+				return Action(AI.Action.LEAVE)
 
 
 	#####################################################
 	#		         HELPER FUNCTIONS					#
 	#####################################################
-	def __getNeighbours(self, x: int, y: int) -> List:
-		""" Return a list of all neighbours of the given co-ordinate"""
-		neighbours = []
-		neighbours.append((x, y + 1))
-		neighbours.append((x, y - 1))
-		neighbours.append((x + 1, y))
-		neighbours.append((x - 1, y))
-		neighbours.append((x + 1, y + 1))
-		neighbours.append((x - 1, y + 1))
-		neighbours.append((x - 1, y - 1))
-		neighbours.append((x + 1, y - 1))
-		valid_neighbours = [x for x in neighbours if x[0] > 0 and x[0] <= self.row and x[1] > 0 and x[1] <= self.row]
-		return valid_neighbours
-
-	def __generateAll(self, x: int, y: int) -> List:
-		""" Return a list of all possible board positions"""
-		positions = []
-		for i in range(1, x+1):
-			for j in range(1, y+1):
-				positions.append((i, j))
-		return positions
+	def __getneighbors(self, x: int, y: int) -> List:
+		""" Return a list of all neighbors of the given co-ordinate"""
+		neighbors = []
+		neighbors.append((x, y + 1))
+		neighbors.append((x, y - 1))
+		neighbors.append((x + 1, y))
+		neighbors.append((x - 1, y))
+		neighbors.append((x + 1, y + 1))
+		neighbors.append((x - 1, y + 1))
+		neighbors.append((x - 1, y - 1))
+		neighbors.append((x + 1, y - 1))
+		valid_neighbors = [x for x in neighbors if x[0] > 0 and x[0] <= self.row and x[1] > 0 and x[1] <= self.row]
+		return valid_neighbors
 
 	def __getCoveredNeighbors(self, x: int, y: int) -> List:
-		""" Return a list of all uncovered neighbors"""
-		covered_neigh = self.__getNeighbors(x, y)
-		valid_neighbours = [x for x in uncovered_neigh if x not in self.uncovered] 
-		return covered_neigh
+		""" Return a list of all neighbors of the given co-ordinate"""
+		neighbors = self.__getneighbors(x+1, y+1)
+		covered_neighbors = [i for i in neighbors if self.board[i[0]-1][i[1]-1].val1 == '*']
+		#if self.f:
+			#print(f'Covered Neighbors inside function:{covered_neighbors}')
+		return covered_neighbors
+
+	def __getUncoveredNeighbors(self, x: int, y: int) -> List: # Uncovered neighbor means no * or B (doesnt include bombs)
+		""" Return a list of all neighbors of the given co-ordinate"""
+		neighbors = self.__getneighbors(x+1, y+1)
+		uncovered_neighbors = [i for i in neighbors if self.board[i[0]-1][i[1]-1].val1 != '*' and self.board[i[0]-1][i[1]-1].val1 != 'B']
+		return uncovered_neighbors
+
+	# This helper function initializes the board according to the model from Kask's discussion
+	def __initializeboard(self) -> None: # NEW
+		self.board = [[i for i in range(self.row)] for j in range(self.row)]
+		for i in range(self.row):
+			for j in range(self.row):
+				tile = Tile()
+				self.board[i][j] = tile
+		self.board[self.x_coord][self.y_coord].val1 = 0 # You can assume first label always 0
+
+		for i in range(self.row): 
+			self.board[0][i].val3 = 5
+			self.board[-1][i].val3 = 5
+		for i in range(self.col):
+			self.board[i][0].val3 = 5
+			self.board[i][-1].val3 = 5
+		self.board[0][0].val3 = 3
+		self.board[self.col-1][self.row-1].val3 = 3
+		self.board[0][self.row-1].val3 = 3
+		self.board[self.col-1][0].val3 = 3
+
+	# This helper function prints out how the model looks in terms of our board nested array
+	# You have to look at it sideways
+	# Indices are accurate for this one
+	def __printboard(self) -> None: # NEW
+		counter = 0
+		for i in range(self.row):
+			print('     ' + str(i) + '   ', end="")
+		print()
+		for i in range(self.row):
+			print('   ' + '-----' + ' ', end="")
+		print()
+		flag = True
+		for l in self.board:
+			for tile in l:
+				if flag == True:
+					print(str(counter) + '|', end=" ")
+					flag = False
+				print(str(tile.val1) + ':' + str(tile.val2) + ':' + str(tile.val3) + '   ', end=" ")
+			flag = True
+			counter+= 1
+			print()
+	
+	# This helper function prints out how the model looks on the actual board
+	# It basically flips the board from __printboard sideways so you can see how it actually looks
+	# Indices are inaccurate in this case so ignore those because the board was flipped sideways
+	def __printboard2(self) -> None: # NEW
+		counter = 0
+		subtract = -1
+		for i in range(self.row):
+			print('     ' + str(i) + '   ', end="")
+		print()
+		for i in range(self.row):
+			print('   ' + '-----' + ' ', end="")
+		print()
+		flag = True
+		for i in range(self.row):
+			for j in range(self.col):
+				if flag == True:
+					print(str(counter) + '|', end=" ")
+					flag = False
+				print(str(self.board[j][subtract].val1) + ':' + 
+				      str(self.board[j][subtract].val2) + ':' + 
+					  str(self.board[j][subtract].val3) + '   ', end=" ")
+			flag = True
+			counter+= 1
+			subtract -= 1
+			print()
+
+	# Updates our board's labels as we uncover
+	# Does not have functionality for changing anything but the label only so far
+	# Coordinate of current tile to uncover must be subtracted by 1 before accessing the board
+	def __updateboard(self, x: int, y: int, label: int) -> None: # NEW
+		self.board[x-1][y-1].val1 = int(label)
+		#if self.f:
+			#print(f'Printing updated val1 for {x,y}: {self.board[x-1][y-1].val1}')
+		num_bombs = 0
+		neighbors = self.__getneighbors(x,y)
+		for neighbor in neighbors:
+			if self.board[neighbor[0]-1][neighbor[1]-1].val1 == 'B': # Possible optimize in the future
+				num_bombs += 1
+		
+		self.board[x-1][y-1].val2 = int(label) - num_bombs
+
+	def __updateboardneighbors(self, x: int, y: int) -> None:
+		neighbors = self.__getneighbors(x,y)
+		for neighbor in neighbors:
+			self.board[neighbor[0]-1][neighbor[1]-1].val3 -= 1
+
+	def __generateOnesList(self) -> None:
+		ones = []
+		for i in range(self.row):
+			for j in range(self.row):	
+				if (self.board[i][j].val1) == 1:
+					ones.append((i+1,j+1))
+		return ones
+	
+	def __updateEffectiveLabel(self, x: int, y: int) -> None:
+		bombneighbors = self.__getneighbors(x,y)
+		for neighbor in bombneighbors:
+			if self.board[neighbor[0]-1][neighbor[1]-1].val1 == '*' or self.board[neighbor[0]-1][neighbor[1]-1].val1 == 'B': # if a bomb's neighbor is uncovered, set to 9
+				self.board[neighbor[0]-1][neighbor[1]-1].val2 = 9
+			else:
+				self.board[neighbor[0]-1][neighbor[1]-1].val2 -= 1 # otherwise, decrement effective label of neighbor
+
+	def __getCoordsofEffectiveZeroes(self) -> None:
+		neighborss = []
+		for i in range(self.row):
+			for j in range(self.row):
+				if (self.board[i][j].val1 != 'B' and self.board[i][j].val1 != '*' and self.board[i][j].val2 == 0):
+					neighbors = self.__getCoveredNeighbors(i,j)
+					#print(f'Tile of coordinate {(i+1,j+1)} has neighbors of {neighbors}')
+					for neighbor in neighbors:
+						if neighbor not in neighborss:
+							neighborss.append(neighbor)
+		return neighborss
+
+	def __getProbability(self) -> tuple: # tuple coordinate is return in array coords
+		neighborss = []
+		maxi = [] 
+		maxval = 0
+		for i in range(self.row):
+			for j in range(self.row):
+				if (self.board[i][j].val1 == '*'): # if a tile is covered
+					neighborss = self.__getUncoveredNeighbors(i,j) # get uncovered neighbors of that tile
+					#print(f'Tile of coordinate {(i+1,j+1)} is covered and we\'re checking for probability')
+					#print(f'Uncovered Neighbors: {neighborss}')
+					for neighbor in neighborss: # for every neighbor in those neighbors
+						self.board[i][j].val4 += self.board[neighbor[0]-1][neighbor[1]-1].val2/self.board[neighbor[0]-1][neighbor[1]-1].val3
+					#print(f'Tile of coordinate ({i+1},{j+1}) has probability value = {self.board[i][j].val4}')
+					if self.board[i][j].val4 > maxval:
+						maxval = self.board[i][j].val4
+						maxi.clear()
+						maxi.append(i)
+						maxi.append(j)
+		#print(f'Max Value: {maxval}')
+		#print(f'Max Co-ords: {maxi}')
+
+		if len(maxi) == 0: # if wall of bombs surround covered tiles,we must do random
+			allCovered = self.__getCoveredTiles()
+			if len(allCovered) == 0: # No covered tiles left
+				return 999
+			#print(f'Covered tiles are {allCovered} from probability')
+			else:
+				randomval = random.randint(0,len(allCovered)-1)
+				maxi.append(allCovered[0][0]-1)
+				maxi.append(allCovered[0][1]-1)
+			
+		return maxi
+
+	def __getCoveredTiles(self): # returns covered tile coordinate in list of tuples whcih are actual game coordinate
+		covered = []
+		for i in range(self.row):
+			for j in range(self.row):
+				if self.board[i][j].val1 == '*': # if a tile is covered
+					covered.append((i+1,j+1)) # May have to fix this if row and column dimensions different
+		return covered
+
+
+# An Optimization PROBLEM if we ever wanna optimize this in the future
+# self.__geteffectiveZeroes
+# The issue is that this function gets the coordinates of every tile in the board
+# that has an effective label of 0 and is not uncovered or a bomb
+# this means that it picks up on tiles that have been done for a very long time also
+# fo these tiles it calls self.__getCoveredNeighbors but for most of these tiles, since they have been done
+# for a very long time, the obviously dont have any covered neighbors for it goes through pointless iterations
+# which could be making our code take longer
