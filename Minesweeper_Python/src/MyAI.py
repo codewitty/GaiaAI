@@ -30,7 +30,7 @@ class MyAI( AI ):
 
 	def __init__(self, rowDimension, colDimension, totalMines, startX, startY):
 		self.zeroes = []
-		self.f = True   # Set to False to remove all comments
+		self.f = False   # Set to False to remove all comments
 		self.total = 0
 		self.ones = []
 		self.bombs = []
@@ -45,14 +45,14 @@ class MyAI( AI ):
 		
 		# Changes I made are below
 		self.__initializeboard() # NEW
-		self.timestoUncover = (rowDimension * colDimension)
+		self.totalPositions = (rowDimension * colDimension)
 		self.__updateboardneighbors(self.current[0], self.current[1])
 		self.neighbors = self.__getCoveredNeighbors(self.current[0]-1, self.current[1]-1)
 
 
 	def getAction(self, number: int) -> "Action Object":
 		if self.f:
-			print(f'Current val:{self.current[0], self.current[1]} Current Value: {number}')
+			print(f'Current Position:{self.current[0], self.current[1]} Current Value: {number}')
 		if (self.board[self.current[0]-1][self.current[1]-1].val1 == '*'):
 			if self.f:
 				print(f'Updating Neighbors of: {(self.current[0], self.current[1])}')
@@ -71,10 +71,10 @@ class MyAI( AI ):
 				for j in range(self.row):
 					if self.board[i][j].val1 != '*':
 						self.total += 1
-			if self.total == self.timestoUncover: # new unhardcoded exit condition
+			if self.total == self.totalPositions: # new unhardcoded exit condition
 				if self.f:
 					print(f'Total: {self.total}')
-					print(f'To Uncover: {self.timestoUncover}')
+					print(f'To Uncover: {self.totalPositions}')
 				return Action(AI.Action.LEAVE)
 
 			# Uncovers anyone in self.neighbors
@@ -207,13 +207,15 @@ class MyAI( AI ):
 		neighbors.append((x - 1, y + 1))
 		neighbors.append((x - 1, y - 1))
 		neighbors.append((x + 1, y - 1))
-		valid_neighbors = [x for x in neighbors if x[0] > 0 and x[0] <= self.row and x[1] > 0 and x[1] <= self.col]
+		valid_neighbors = [x for x in neighbors if x[0] > 0 and x[0] <= self.col and x[1] > 0 and x[1] <= self.row]
 		return valid_neighbors
 
 	def __getCoveredNeighbors(self, x: int, y: int) -> List:
 		""" Return a list of all neighbors of the given co-ordinate"""
 		neighbors = self.__getneighbors(x+1, y+1)
 		covered_neighbors = [i for i in neighbors if self.board[i[0]-1][i[1]-1].val1 == '*']
+		if self.f:
+			print(f'Covered Neighbors: {covered_neighbors}')
 		return covered_neighbors
 
 	def __getUncoveredNeighbors(self, x: int, y: int) -> List: # Uncovered neighbor means no * or B (doesnt include bombs)
@@ -224,9 +226,9 @@ class MyAI( AI ):
 
 	# This helper function initializes the board according to the model from Kask's discussion
 	def __initializeboard(self) -> None: # NEW
-		self.board = [[i for i in range(self.col)] for j in range(self.row)]
-		for i in range(self.row):
-			for j in range(self.col):
+		self.board = [[i for i in range(self.row)] for j in range(self.col)]
+		for i in range(self.col):
+			for j in range(self.row):
 				tile = Tile()
 				self.board[i][j] = tile
 				#if self.f:
@@ -238,20 +240,20 @@ class MyAI( AI ):
 				print(f'Board cordinates: I:{i}')
 			self.board[0][i].val3 = 5
 			self.board[-1][i].val3 = 5
-		for i in range(self.row):
+		for i in range(self.col):
 			if self.f:
 				print(f'Board cordinates: I:{i}')
 			self.board[i][0].val3 = 5
 			self.board[i][-1].val3 = 5
 		self.board[0][0].val3 = 3
-		self.board[self.row-1][self.col-1].val3 = 3
+		self.board[self.col-1][self.row-1].val3 = 3
 		self.board[0][self.row-1].val3 = 3
-		self.board[self.row-1][0].val3 = 3
+		self.board[self.col-1][0].val3 = 3
 
 	# This helper function prints out how the model looks in terms of our board nested array
 	# You have to look at it sideways
 	# Indices are accurate for this one
-	def __printboard(self) -> None: # NEW
+	def __printboard(self) -> None: # DONT USE (STILL NEEDS FIXING)
 		counter = 1
 		for i in range(self.row):
 			print('     ' + str(i) + '   ', end="  ")
@@ -273,10 +275,10 @@ class MyAI( AI ):
 	# This helper function prints out how the model looks on the actual board
 	# It basically flips the board from __printboard sideways so you can see how it actually looks
 	# Indices are inaccurate in this case so ignore those because the board was flipped sideways
-	def __printboard2(self) -> None:
-		counter = 30
+	def __printboard2(self) -> None: #(OK TO USE)
+		counter = self.row
 		subtract = -1
-		for i in range(1, self.row + 1):
+		for i in range(1, self.col + 1):
 			if i == 1:
 				print('        ' + str(i) + '  ', end="  ")
 			elif i >1 and i <= 10:
@@ -295,8 +297,8 @@ class MyAI( AI ):
 		print()
 		"""
 		flag = True
-		for i in range(self.col):
-			for j in range(self.row):
+		for i in range(self.row):
+			for j in range(self.col):
 				if flag == True:
 					if counter < 10:
 						print('0' + str(counter) + '|', end="   ")
@@ -310,7 +312,7 @@ class MyAI( AI ):
 			counter -= 1
 			subtract -= 1
 			print()
-		for i in range(1, self.row + 1):
+		for i in range(1, self.col + 1):
 			if i == 1:
 				print('        ' + str(i) + '  ', end="  ")
 			elif i >1 and i <= 10:
