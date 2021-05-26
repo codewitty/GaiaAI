@@ -42,17 +42,20 @@ class MyAI( AI ):
 		self.current = (startX+1, startY+1)
 		self.flag = True
 		self.zeroes.append(self.current)
+		#print(f'self.row is {self.row}')
+		#print(f'self.col = {self.col}')
 		
 		# Changes I made are below
 		self.__initializeboard() # NEW
-		self.totalPositions = (rowDimension * colDimension)
+		self.timestoUncover = (rowDimension * colDimension)
 		self.__updateboardneighbors(self.current[0], self.current[1])
 		self.neighbors = self.__getCoveredNeighbors(self.current[0]-1, self.current[1]-1)
+		#self.__printboard2()
 
 
 	def getAction(self, number: int) -> "Action Object":
 		if self.f:
-			print(f'Current Position:{self.current[0], self.current[1]} Current Value: {number}')
+			print(f'Current val:{self.current[0], self.current[1]} Current Value: {number}')
 		if (self.board[self.current[0]-1][self.current[1]-1].val1 == '*'):
 			if self.f:
 				print(f'Updating Neighbors of: {(self.current[0], self.current[1])}')
@@ -67,14 +70,14 @@ class MyAI( AI ):
 		#self.__printboard() # NEW Uncomment to use (Only if running in debug mode)
 		while self.flag: 
 			self.total = 0
-			for i in range(self.row):	
-				for j in range(self.col):
+			for i in range(self.col):	
+				for j in range(self.row):
 					if self.board[i][j].val1 != '*':
 						self.total += 1
-			if self.total == self.totalPositions: # new unhardcoded exit condition
+			if self.total == self.timestoUncover: # new unhardcoded exit condition
 				if self.f:
 					print(f'Total: {self.total}')
-					print(f'To Uncover: {self.totalPositions}')
+					print(f'To Uncover: {self.timestoUncover}')
 				return Action(AI.Action.LEAVE)
 
 			# Uncovers anyone in self.neighbors
@@ -93,8 +96,8 @@ class MyAI( AI ):
 			# If self.neighbors is empty we must use algorithms to add more to uncover
 			# Below clears every 0
 			else:
-				for i in range(self.row):	
-					for j in range(self.col):
+				for i in range(self.col):	
+					for j in range(self.row):
 						if self.board[i][j].val1 == 0 and self.board[i][j].val3 > 0:
 							if self.f:
 								print(f'FOUND A NEW ZERO!! Position : ({i+1}, {j+1})')
@@ -147,8 +150,8 @@ class MyAI( AI ):
 			if len(self.neighbors) == 0:
 				if self.f:
 					print('Finding effective zero candidates')
-				for i in range(self.row):
-					for j in range(self.col):
+				for i in range(self.col):
+					for j in range(self.row):
 						if self.board[i][j].val2 == self.board[i][j].val3: # if effective label of any tile is equal to uncovered neighbors
 							n = self.__getneighbors(i+1,j+1)
 							for neighbor in n: # for neighbor in neighbors of any tile that has effective label equal to uncovered neighbors
@@ -214,8 +217,6 @@ class MyAI( AI ):
 		""" Return a list of all neighbors of the given co-ordinate"""
 		neighbors = self.__getneighbors(x+1, y+1)
 		covered_neighbors = [i for i in neighbors if self.board[i[0]-1][i[1]-1].val1 == '*']
-		if self.f:
-			print(f'Covered Neighbors: {covered_neighbors}')
 		return covered_neighbors
 
 	def __getUncoveredNeighbors(self, x: int, y: int) -> List: # Uncovered neighbor means no * or B (doesnt include bombs)
@@ -253,7 +254,7 @@ class MyAI( AI ):
 	# This helper function prints out how the model looks in terms of our board nested array
 	# You have to look at it sideways
 	# Indices are accurate for this one
-	def __printboard(self) -> None: # DONT USE (STILL NEEDS FIXING)
+	def __printboard(self) -> None: # NEW
 		counter = 1
 		for i in range(self.row):
 			print('     ' + str(i) + '   ', end="  ")
@@ -262,12 +263,12 @@ class MyAI( AI ):
 			print('   ' + '-----' + ' ', end="  ")
 		print()
 		flag = True
-		for l in self.board:
-			for tile in l:
+		for i in range(self.col):
+			for j in range(self.row):
 				if flag == True:
-					print(str(counter) + '|', end="   ")
+					print(str(i) + '|', end="   ")
 					flag = False
-				print(str(tile.val1) + ':' + str(tile.val2) + ':' + str(tile.val3) + '   ', end="   ")
+				print(str(self.board[i][j].val1) + ':' + str(self.board[i][j].val2) + ':' + str(self.board[i][j].val3) + '   ', end="   ")
 			flag = True
 			counter+= 1
 			print()
@@ -275,7 +276,7 @@ class MyAI( AI ):
 	# This helper function prints out how the model looks on the actual board
 	# It basically flips the board from __printboard sideways so you can see how it actually looks
 	# Indices are inaccurate in this case so ignore those because the board was flipped sideways
-	def __printboard2(self) -> None: #(OK TO USE)
+	def __printboard2(self) -> None:
 		counter = self.row
 		subtract = -1
 		for i in range(1, self.col + 1):
@@ -297,8 +298,8 @@ class MyAI( AI ):
 		print()
 		"""
 		flag = True
-		for i in range(self.row):
-			for j in range(self.col):
+		for i in range(self.row): # 0 - 15
+			for j in range(self.col): # 0 - 29
 				if flag == True:
 					if counter < 10:
 						print('0' + str(counter) + '|', end="   ")
@@ -338,13 +339,14 @@ class MyAI( AI ):
 
 	def __updateboardneighbors(self, x: int, y: int) -> None:
 		neighbors = self.__getneighbors(x,y)
+		#print(neighbors)
 		for neighbor in neighbors:
 			self.board[neighbor[0]-1][neighbor[1]-1].val3 -= 1
 
 	def __generateOnesList(self) -> None:
 		ones = []
-		for i in range(self.row):
-			for j in range(self.col):	
+		for i in range(self.col):
+			for j in range(self.row):	
 				if (self.board[i][j].val1) == 1:
 					ones.append((i+1,j+1))
 		return ones
@@ -359,8 +361,8 @@ class MyAI( AI ):
 
 	def __getCoordsofEffectiveZeroes(self) -> None:
 		neighborss = []
-		for i in range(self.row):
-			for j in range(self.col):
+		for i in range(self.col):
+			for j in range(self.row):
 				if (self.board[i][j].val1 != 'B' and self.board[i][j].val1 != '*' and self.board[i][j].val2 == 0):
 					neighbors = self.__getCoveredNeighbors(i,j)
 					#print(f'Tile of coordinate {(i+1,j+1)} has neighbors of {neighbors}')
@@ -373,8 +375,8 @@ class MyAI( AI ):
 		neighborss = []
 		maxi = [] 
 		maxval = 0
-		for i in range(self.row):
-			for j in range(self.col):
+		for i in range(self.col):
+			for j in range(self.row):
 				if (self.board[i][j].val1 == '*'): # if a tile is covered
 					neighborss = self.__getUncoveredNeighbors(i,j) # get uncovered neighbors of that tile
 					#print(f'Tile of coordinate {(i+1,j+1)} is covered and we\'re checking for probability')
@@ -404,8 +406,8 @@ class MyAI( AI ):
 
 	def __getCoveredTiles(self): # returns covered tile coordinate in list of tuples whcih are actual game coordinate
 		covered = []
-		for i in range(self.row):
-			for j in range(self.col):
+		for i in range(self.col):
+			for j in range(self.row):
 				if self.board[i][j].val1 == '*': # if a tile is covered
 					covered.append((i+1,j+1)) # May have to fix this if row and column dimensions different
 		return covered
