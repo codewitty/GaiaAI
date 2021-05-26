@@ -207,7 +207,7 @@ class MyAI( AI ):
 		neighbors.append((x - 1, y + 1))
 		neighbors.append((x - 1, y - 1))
 		neighbors.append((x + 1, y - 1))
-		valid_neighbors = [x for x in neighbors if x[0] > 0 and x[0] <= self.col and x[1] > 0 and x[1] <= self.row]
+		valid_neighbors = [x for x in neighbors if x[0] > 0 and x[0] <= self.row and x[1] > 0 and x[1] <= self.col]
 		return valid_neighbors
 
 	def __getCoveredNeighbors(self, x: int, y: int) -> List:
@@ -252,20 +252,20 @@ class MyAI( AI ):
 	# You have to look at it sideways
 	# Indices are accurate for this one
 	def __printboard(self) -> None: # NEW
-		counter = 0
+		counter = 1
 		for i in range(self.row):
-			print('     ' + str(i) + '   ', end="")
+			print('     ' + str(i) + '   ', end="  ")
 		print()
 		for i in range(self.row):
-			print('   ' + '-----' + ' ', end="")
+			print('   ' + '-----' + ' ', end="  ")
 		print()
 		flag = True
 		for l in self.board:
 			for tile in l:
 				if flag == True:
-					print(str(counter) + '|', end=" ")
+					print(str(counter) + '|', end="   ")
 					flag = False
-				print(str(tile.val1) + ':' + str(tile.val2) + ':' + str(tile.val3) + '   ', end=" ")
+				print(str(tile.val1) + ':' + str(tile.val2) + ':' + str(tile.val3) + '   ', end="   ")
 			flag = True
 			counter+= 1
 			print()
@@ -273,28 +273,51 @@ class MyAI( AI ):
 	# This helper function prints out how the model looks on the actual board
 	# It basically flips the board from __printboard sideways so you can see how it actually looks
 	# Indices are inaccurate in this case so ignore those because the board was flipped sideways
-	def __printboard2(self) -> None: # NEW
-		counter = 0
+	def __printboard2(self) -> None:
+		counter = 30
 		subtract = -1
-		for i in range(self.row):
-			print('     ' + str(i) + '   ', end="")
+		for i in range(1, self.row + 1):
+			if i == 1:
+				print('        ' + str(i) + '  ', end="  ")
+			elif i >1 and i <= 10:
+				print('    ' + str(i) + '  ', end="  ")
+			else:
+				print('   ' + str(i) + '  ', end="  ")
 		print()
-		for i in range(self.row):
-			print('   ' + '-----' + ' ', end="")
+		"""
+		for i in range(self.row + 1):
+			if i == 1:
+				print('-----' + '  ', end=" ")
+			elif i >1 and i <= 10:
+				print(' ' + '-----' + '  ', end=" ")
+			else:
+				print(' ' + '-----' + '  ', end=" ")
 		print()
+		"""
 		flag = True
 		for i in range(self.col):
 			for j in range(self.row):
 				if flag == True:
-					print(str(counter) + '|', end=" ")
+					if counter < 10:
+						print('0' + str(counter) + '|', end="   ")
+					else:
+						print(str(counter) + '|', end="   ")
 					flag = False
 				print(str(self.board[j][subtract].val1) + ':' + 
 				      str(self.board[j][subtract].val2) + ':' + 
-					  str(self.board[j][subtract].val3) + '   ', end=" ")
+					  str(self.board[j][subtract].val3) + '  ', end="  ")
 			flag = True
-			counter+= 1
+			counter -= 1
 			subtract -= 1
 			print()
+		for i in range(1, self.row + 1):
+			if i == 1:
+				print('        ' + str(i) + '  ', end="  ")
+			elif i >1 and i <= 10:
+				print('    ' + str(i) + '  ', end="  ")
+			else:
+				print('   ' + str(i) + '  ', end="  ")
+		print()
 
 	# Updates our board's labels as we uncover
 	# Does not have functionality for changing anything but the label only so far
