@@ -119,8 +119,8 @@ class MyAI( AI ):
 					print(f'Ones List after zeroes are done: {self.ones}')
 
 				for one in self.ones:
-					if self.f:
-						print(f'Coordinate of {one} has {self.board[one[0]-1][one[1]-1].val1}:{self.board[one[0]-1][one[1]-1].val2}:{self.board[one[0]-1][one[1]-1].val3}')
+					#if self.f:
+						#print(f'Coordinate of {one} has {self.board[one[0]-1][one[1]-1].val1}:{self.board[one[0]-1][one[1]-1].val2}:{self.board[one[0]-1][one[1]-1].val3}')
 
 					if int(self.board[one[0]-1][one[1]-1].val1) == int(self.board[one[0]-1][one[1]-1].val3):
 						if self.f:
@@ -363,14 +363,14 @@ class MyAI( AI ):
 		neighborss = []
 		for i in range(self.col):
 			for j in range(self.row):
-				if (self.board[i][j].val1 != 'B' and self.board[i][j].val1 != '*' and self.board[i][j].val2 == 0):
+				if (self.board[i][j].val1 != 'B' and self.board[i][j].val1 != '*' and self.board[i][j].val2 == 0 and self.board[i][j].val3 != 0):
 					neighbors = self.__getCoveredNeighbors(i,j)
-					#print(f'Tile of coordinate {(i+1,j+1)} has neighbors of {neighbors}')
 					for neighbor in neighbors:
 						if neighbor not in neighborss:
 							neighborss.append(neighbor)
 		return neighborss
 
+# Calculate the probability of a position having a bomb.
 	def __getProbability(self) -> tuple: # tuple coordinate is return in array coords
 		neighborss = []
 		maxi = [] 
@@ -379,11 +379,12 @@ class MyAI( AI ):
 			for j in range(self.row):
 				if (self.board[i][j].val1 == '*'): # if a tile is covered
 					neighborss = self.__getUncoveredNeighbors(i,j) # get uncovered neighbors of that tile
-					#print(f'Tile of coordinate {(i+1,j+1)} is covered and we\'re checking for probability')
-					#print(f'Uncovered Neighbors: {neighborss}')
+					if not neighborss:
+						continue
 					for neighbor in neighborss: # for every neighbor in those neighbors
 						self.board[i][j].val4 += self.board[neighbor[0]-1][neighbor[1]-1].val2/self.board[neighbor[0]-1][neighbor[1]-1].val3
-					#print(f'Tile of coordinate ({i+1},{j+1}) has probability value = {self.board[i][j].val4}')
+					if self.f:
+						print(f'Tile of coordinate ({i+1},{j+1}) has probability value = {self.board[i][j].val4}')
 					if self.board[i][j].val4 > maxval:
 						maxval = self.board[i][j].val4
 						maxi.clear()
