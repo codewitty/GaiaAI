@@ -107,7 +107,7 @@ class MyAI( AI ):
 								new = self.neighbors.pop(0)
 							if self.f:
 								print(f'About to uncover: {new[0]}, {new[1]}')
-								print(f'Covered Neighbors to uncover: {self.neighbors}')
+								print(f'Covered Neighbors for new Zero found: {self.neighbors}')
 							self.current = new
 							return Action(action, new[0]-1, new[1]-1)
 
@@ -134,12 +134,9 @@ class MyAI( AI ):
 								if self.f:
 									print(f'Bomb Coordinate is {(neighbor[0],neighbor[1])}')
 								self.board[neighbor[0]-1][neighbor[1]-1].val1 = 'B' # mark it as a bomb
-								self.bombs.append((neighbor[0],neighbor[1])) # add coordinate of bomb to bomb list
+								self.__updateboardneighbors(neighbor[0],neighbor[1])
+								self.__updateEffectiveLabel(neighbor[0],neighbor[1])
 				
-				# now all bombs have been appended to bomb list
-				for bomb in self.bombs:	 # now update neighbors of each bomb coordinate
-					self.__updateboardneighbors(bomb[0],bomb[1])
-					self.__updateEffectiveLabel(bomb[0],bomb[1])
 				if self.f:
 					print('Gonna print board statement now')
 					self.__printboard2()
