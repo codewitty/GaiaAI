@@ -33,7 +33,6 @@ class MyAI( AI ):
 		self.f = False   # Set to False to remove all comments
 		self.total = 0
 		self.ones = []
-		self.done = []
 		self.row = rowDimension
 		self.col = colDimension
 		self.x_coord = startX
@@ -49,7 +48,6 @@ class MyAI( AI ):
 		self.timestoUncover = (rowDimension * colDimension)
 		self.__updateboardneighbors(self.current[0], self.current[1])
 		self.neighbors = self.__getCoveredNeighbors(self.current[0]-1, self.current[1]-1)
-		#self.__printboard2()
 
 
 	def getAction(self, number: int) -> "Action Object":
@@ -89,7 +87,6 @@ class MyAI( AI ):
 				action = AI.Action.UNCOVER
 				if self.f:
 					print(f'About to uncover: {x+1}, {y+1}')
-				self.done.append(self.current)
 				return Action(action, x, y)
 
 			# If self.neighbors is empty we must use algorithms to add more to uncover
@@ -121,12 +118,30 @@ class MyAI( AI ):
 					#if self.f:
 						#print(f'Coordinate of {one} has {self.board[one[0]-1][one[1]-1].val1}:{self.board[one[0]-1][one[1]-1].val2}:{self.board[one[0]-1][one[1]-1].val3}')
 
+					if int(self.board[one[0]-1][one[1]-1].val2) == 0 and int(self.board[one[0]-1][one[1]-1].val3 > 0):
+						if self.f:
+							print(f'All neighbors of {one} are safe and need to be uncovered')
+						self.neighbors = self.__getCoveredNeighbors(one[0]-1,one[1]-1) # All covered neighbors of tile where effective num is equal to uncovered tiles
+						if self.f:
+							print(f'Safe neighbors of {one} are {self.neighbors}')
+						break
+
+				if len(self.neighbors) >= 1:
+					self.current = self.neighbors.pop(0)
+					x = self.current[0] - 1
+					y = self.current[1] - 1
+					action = AI.Action.UNCOVER
+					if self.f:
+						print(f'About to uncover part 2: {x+1}, {y+1}')
+					return Action(action, x, y)
+
 					if int(self.board[one[0]-1][one[1]-1].val1) == int(self.board[one[0]-1][one[1]-1].val3):
 						if self.f:
 							print(f'These triggered if statement: {one}')
-							self.__printboard2()
+							#self.__printboard2()
 						neighbors = self.__getneighbors(one[0],one[1]) # Neighbors of all tiles where num of label is equal to uncovered tiles
-						#print(f'Tile Coordinate is {one}, and neighbors is {neighbors}')
+						if self.f:
+							print(f'Tile Coordinate is {one}, and neighbors are {neighbors}')
 						#print(f'CHECKING')
 						for neighbor in neighbors: # for each neighbor in those neighbors
 							if self.board[neighbor[0]-1][neighbor[1]-1].val1 == '*' and self.board[neighbor[0]-1][neighbor[1]-1].val2 != 9: # if the neighbor is covered
@@ -211,7 +226,7 @@ class MyAI( AI ):
 	def __getCoveredNeighbors(self, x: int, y: int) -> List:
 		""" Return a list of all neighbors of the given co-ordinate"""
 		neighbors = self.__getneighbors(x+1, y+1)
-		covered_neighbors = [i for i in neighbors if self.board[i[0]-1][i[1]-1].val1 == '*']
+		covered_neighbors = [i for i in neighbors if self.board[i[0]-1][i[1]-1].val1 == '*' and self.board[i[0]-1][i[1]-1].val1 != 'B']
 		return covered_neighbors
 
 	def __getUncoveredNeighbors(self, x: int, y: int) -> List: # Uncovered neighbor means no * or B (doesnt include bombs)
