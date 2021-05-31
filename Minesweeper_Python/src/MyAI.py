@@ -33,7 +33,6 @@ class MyAI( AI ):
 		self.f = False   # Set to False to remove all comments
 		self.total = 0
 		self.ones = []
-		self.bombs = []
 		self.done = []
 		self.row = rowDimension
 		self.col = colDimension
@@ -161,7 +160,6 @@ class MyAI( AI ):
 
 			
 			# probability check 
-			self.bombs = []
 			if len(self.neighbors) == 0:
 				#print("Checking game board before probability")
 				#self.__printboard2()
