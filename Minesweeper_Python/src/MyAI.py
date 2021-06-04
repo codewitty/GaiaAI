@@ -31,7 +31,7 @@ class MyAI( AI ):
 	def __init__(self, rowDimension, colDimension, totalMines, startX, startY):
 		self.zeroes = []
 		#self.f = False   # Set to False to remove all comments
-		self.f = True   # Set to False to remove all comments
+		self.f = False   # Set to False to remove all comments
 		self.total = 0
 		self.ones = []
 		self.frontier = []
@@ -447,6 +447,11 @@ class MyAI( AI ):
 				maxi.append(allCovered[0][0]-1)
 				maxi.append(allCovered[0][1]-1)
 			
+
+		for i in range(self.col):
+			for j in range(self.row):
+				self.board[i][j].val4 = 0
+		
 		return maxi
 
 	def __getCoveredTiles(self): # returns covered tile coordinate in list of tuples whcih are actual game coordinate
