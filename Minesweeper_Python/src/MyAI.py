@@ -30,9 +30,11 @@ class MyAI( AI ):
 
 	def __init__(self, rowDimension, colDimension, totalMines, startX, startY):
 		self.zeroes = []
-		self.f = False   # Set to False to remove all comments
+		#self.f = False   # Set to False to remove all comments
+		self.f = True   # Set to False to remove all comments
 		self.total = 0
 		self.ones = []
+		self.frontier = []
 		self.row = rowDimension
 		self.col = colDimension
 		self.x_coord = startX
@@ -171,20 +173,38 @@ class MyAI( AI ):
 									self.__updateboardneighbors(neighbor[0],neighbor[1]) # so we update the labels of everyone around that bomb
 									self.__updateEffectiveLabel(neighbor[0],neighbor[1])
 									self.neighbors = self.__getCoordsofEffectiveZeroes() # after updating, we now get more effective zeroes
-									#self.__printboard2()
+
+			# CSP check 
+			if len(self.neighbors) == 0:
+				for i in range(self.col):
+					for j in range(self.row):	
+						if self.board[i][j].val1 != '*' and self.board[i][j].val3 > 0 and self.board[i][j].val1 != 'B':
+							self.frontier.append((i+1, j+1))
+				if self.f:
+					print(f'Frontier Positions: {self.frontier}')
+
+            # This is still in progress
+			if len(self.neighbors) == 0:
+				self.ones = self.__generateOnesList()
+				if len(self.ones) > 0:
+					first_one = self.ones.pop(0)
+					viable_neighbors = self.__getViableNeighbors(first_one[0]-1, first_one[1]-1)
+					covered_neighbors = self.__getCoveredNeighbors(first_one[0]-1, first_one[1]-1)
+					if self.f:
+						print(f'First one:{first_one}')
+						print(f'The viable neighbors of first one in CSP check are: {viable_neighbors}')
+						print(f'The covered neighbors of first one in CSP check are: {covered_neighbors}')
+
 
 			
 			# probability check 
 			if len(self.neighbors) == 0:
-				#print("Checking game board before probability")
-				#self.__printboard2()
 				maxi = self.__getProbability()
 				if maxi == 999: # This is new (means that if there are no covered tiles left, we just leave)
 					return Action(AI.Action.LEAVE)
 				if self.f:
 					print(f'Max position: {maxi}') # Issue in probability part
 					print(f'Max Probability: {self.board[maxi[0]][maxi[1]].val4}') # maxi empty
-				#self.__printboard2()
 				self.board[maxi[0]][maxi[1]].val1 = 'B'
 				self.__updateboardneighbors(maxi[0]+1,maxi[1]+1)
 				self.__updateEffectiveLabel(maxi[0]+1,maxi[1]+1)
@@ -234,6 +254,19 @@ class MyAI( AI ):
 		neighbors = self.__getneighbors(x+1, y+1)
 		uncovered_neighbors = [i for i in neighbors if self.board[i[0]-1][i[1]-1].val1 != '*' and self.board[i[0]-1][i[1]-1].val1 != 'B']
 		return uncovered_neighbors
+
+	def __getViableNeighbors(self, x: int, y: int) -> List: # Uncovered neighbor means no * or B (doesnt include bombs)
+		""" Return a list of all neighbors of the given co-ordinate"""
+		neighbors = self.__getneighbors(x+1, y+1)
+		viable_neighbors = [i for i in neighbors if self.board[i[1]-1] == y + 2 or self.board[i[1]-1] == y - 2]
+		viable_Neighbors = [i for i in viable_neighbors if self.board[i[0]-1][i[1]-1].val3 != 0 and self.board[i[0]-1][i[1]-1].val1 != 'B']
+		return viable_Neighbors
+
+	def __getFrontier(self, x: int, y: int) -> List:
+		""" Return a list of all neighbors of the given co-ordinate"""
+		neighbors = self.__getneighbors(x+1, y+1)
+		covered_neighbors = [i for i in neighbors if self.board[i[0]-1][i[1]-1].val1 == '*' and self.board[i[0]-1][i[1]-1].val1 != 'B']
+		return covered_neighbors
 
 	# This helper function initializes the board according to the model from Kask's discussion
 	def __initializeboard(self) -> None: # NEW
@@ -400,8 +433,9 @@ class MyAI( AI ):
 						maxi.clear()
 						maxi.append(i)
 						maxi.append(j)
-		#print(f'Max Value: {maxval}')
-		#print(f'Max Co-ords: {maxi}')
+		if self.f:
+			print(f'Max Value: {maxval}')
+			print(f'Max Co-ords: {maxi}')
 
 		if len(maxi) == 0: # if wall of bombs surround covered tiles,we must do random
 			allCovered = self.__getCoveredTiles()
