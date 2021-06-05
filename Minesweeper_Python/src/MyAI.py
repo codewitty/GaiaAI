@@ -30,8 +30,8 @@ class MyAI( AI ):
 
 	def __init__(self, rowDimension, colDimension, totalMines, startX, startY):
 		self.zeroes = []
-		#self.f = False   # Set to False to remove all comments
 		self.f = True   # Set to False to remove all comments
+		#self.f = False   # Set to False to remove all comments
 		self.total = 0
 		self.ones = []
 		self.coveredfrontier = []
@@ -176,9 +176,7 @@ class MyAI( AI ):
 									self.neighbors = self.__getCoordsofEffectiveZeroes() # after updating, we now get more effective zeroes
 
 			# CSP check part 3 of algo
-			
-			if len(self.neighbors) == 0: # Puts frontier tiles into self.frontier
-				
+			if len(self.neighbors) == 0:
 				for i in range(self.col):
 					for j in range(self.row):	
 						if self.board[i][j].val1 != '*' and self.board[i][j].val1 != 'B' and self.board[i][j].val3 > 0:
@@ -460,7 +458,6 @@ class MyAI( AI ):
 				randomval = random.randint(0,len(allCovered)-1)
 				maxi.append(allCovered[0][0]-1)
 				maxi.append(allCovered[0][1]-1)
-			
 
 		for i in range(self.col):
 			for j in range(self.row):
