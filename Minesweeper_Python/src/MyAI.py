@@ -30,11 +30,12 @@ class MyAI( AI ):
 
 	def __init__(self, rowDimension, colDimension, totalMines, startX, startY):
 		self.zeroes = []
-		self.f = True   # Set to False to remove all comments
-		#self.f = False   # Set to False to remove all comments
+		#self.f = True   # Set to False to remove all comments
+		self.f = False   # Set to False to remove all comments
 		self.total = 0
 		self.ones = []
 		self.frontier = []
+		self.frontier_ones = []
 		self.row = rowDimension
 		self.col = colDimension
 		self.x_coord = startX
@@ -174,7 +175,8 @@ class MyAI( AI ):
 									self.__updateEffectiveLabel(neighbor[0],neighbor[1])
 									self.neighbors = self.__getCoordsofEffectiveZeroes() # after updating, we now get more effective zeroes
 
-			# CSP check part 3 of algo
+			# CSP check
+			"""
 			if len(self.neighbors) == 0:
 				for i in range(self.col):
 					for j in range(self.row):	
@@ -182,18 +184,48 @@ class MyAI( AI ):
 							self.frontier.append((i+1, j+1))
 				if self.f:
 					print(f'Frontier Positions: {self.frontier}')
+            """
 
-            # This is still in progress
+			# Get all ones, generate list of neighbors, and find a subset if possible
 			if len(self.neighbors) == 0:
-				self.ones = self.__generateOnesList()
+				self.ones = self.__getFrontierOnes()
 				if len(self.ones) > 0:
-					first_one = self.ones.pop(0)
-					viable_neighbors = self.__getViableNeighbors(first_one[0]-1, first_one[1]-1)
-					covered_neighbors = self.__getCoveredNeighbors(first_one[0]-1, first_one[1]-1)
+					for first_one in self.ones:
+						#viable_neighbors = self.__getViableNeighbors(first_one[0]-1, first_one[1]-1)
+						covered_neighbors = self.__getCoveredNeighbors(first_one[0]-1, first_one[1]-1)
+						self.frontier_ones.append(covered_neighbors)
 					if self.f:
-						print(f'First one:{first_one}')
-						print(f'The viable neighbors of first one in CSP check are: {viable_neighbors}')
-						print(f'The covered neighbors of first one in CSP check are: {covered_neighbors}')
+						print(f'Frontier ones list:{self.frontier_ones}')
+						#print(f'First one:{first_one}')
+						#print(f'The viable neighbors of first one in CSP check are: {viable_neighbors}')
+						#print(f'The covered neighbors of first one in CSP check are: {covered_neighbors}')
+					for one in self.frontier_ones:
+						for two in self.frontier_ones:
+							if set(one).issubset(set(two)) and one != two:
+								if self.f:
+									print(f'One: {one}')
+									print(f'Two: {two}')
+								two_new = []
+								for element in two:
+									if self.f:
+										print(f'Element: {element}')
+									if element in one:
+										continue
+										#two.remove(element)
+									else:
+										two_new.append(element)
+										if self.f:
+												print(f'Two.2: {two_new}')
+									self.neighbors = two_new
+								if len(self.neighbors) > 0:
+									self.current = self.neighbors.pop(0)
+									x = self.current[0] - 1
+									y = self.current[1] - 1
+									action = AI.Action.UNCOVER
+									if self.f:
+											print(f'About to uncover a frontier one in position: {x+1}, {y+1}')
+									self.frontier_ones = []
+									return Action(action, x, y)
 
 
 			
@@ -250,23 +282,40 @@ class MyAI( AI ):
 		return covered_neighbors
 
 	def __getUncoveredNeighbors(self, x: int, y: int) -> List: # Uncovered neighbor means no * or B (doesnt include bombs)
-		""" Return a list of all neighbors of the given co-ordinate"""
+		""" Return a list of all uncovered neighbors of the given co-ordinate"""
 		neighbors = self.__getneighbors(x+1, y+1)
 		uncovered_neighbors = [i for i in neighbors if self.board[i[0]-1][i[1]-1].val1 != '*' and self.board[i[0]-1][i[1]-1].val1 != 'B']
 		return uncovered_neighbors
 
 	def __getViableNeighbors(self, x: int, y: int) -> List: # Uncovered neighbor means no * or B (doesnt include bombs)
-		""" Return a list of all neighbors of the given co-ordinate"""
+		""" Return a list of all vertically adjacent neighbors of the given co-ordinate"""
 		neighbors = self.__getneighbors(x+1, y+1)
 		viable_neighbors = [i for i in neighbors if self.board[i[1]-1] == y + 2 or self.board[i[1]-1] == y - 2]
 		viable_Neighbors = [i for i in viable_neighbors if self.board[i[0]-1][i[1]-1].val3 != 0 and self.board[i[0]-1][i[1]-1].val1 != 'B']
 		return viable_Neighbors
 
 	def __getFrontier(self, x: int, y: int) -> List:
-		""" Return a list of all neighbors of the given co-ordinate"""
+		""" Return a list of all frontier positions on present board """
 		neighbors = self.__getneighbors(x+1, y+1)
 		covered_neighbors = [i for i in neighbors if self.board[i[0]-1][i[1]-1].val1 == '*' and self.board[i[0]-1][i[1]-1].val1 != 'B']
 		return covered_neighbors
+
+	def __getFrontierOnes(self) -> List:
+		""" Return a list of all frontier positions on present board """
+		ones = []
+		for i in range(self.col):
+			for j in range(self.row):	
+				if (self.board[i][j].val1) == 1 and (self.board[i][j].val3) != 0:
+					ones.append((i+1,j+1))
+		return ones
+
+	def __generateOnesList(self) -> None:
+		ones = []
+		for i in range(self.col):
+			for j in range(self.row):	
+				if (self.board[i][j].val1) == 1:
+					ones.append((i+1,j+1))
+		return ones
 
 	# This helper function initializes the board according to the model from Kask's discussion
 	def __initializeboard(self) -> None: # NEW
@@ -386,13 +435,6 @@ class MyAI( AI ):
 		for neighbor in neighbors:
 			self.board[neighbor[0]-1][neighbor[1]-1].val3 -= 1
 
-	def __generateOnesList(self) -> None:
-		ones = []
-		for i in range(self.col):
-			for j in range(self.row):	
-				if (self.board[i][j].val1) == 1:
-					ones.append((i+1,j+1))
-		return ones
 	
 	def __updateEffectiveLabel(self, x: int, y: int) -> None:
 		bombneighbors = self.__getneighbors(x,y)
