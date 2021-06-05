@@ -36,6 +36,8 @@ class MyAI( AI ):
 		self.ones = []
 		self.frontier = []
 		self.frontier_ones = []
+		self.coveredfrontier = []
+		self.uncoveredfrontier = []
 		self.row = rowDimension
 		self.col = colDimension
 		self.x_coord = startX
@@ -180,8 +182,10 @@ class MyAI( AI ):
 			if len(self.neighbors) == 0:
 				for i in range(self.col):
 					for j in range(self.row):	
-						if self.board[i][j].val1 != '*' and self.board[i][j].val3 > 0 and self.board[i][j].val1 != 'B':
-							self.frontier.append((i+1, j+1))
+						if self.board[i][j].val1 != '*' and self.board[i][j].val1 != 'B' and self.board[i][j].val3 > 0:
+							self.uncoveredfrontier.append((i+1, j+1))
+						elif self.board[i][j].val1 == '*' and self.__nextToUncovered(i,j) == True:
+							self.coveredfrontier.append((i+1,j+1))
 				if self.f:
 					print(f'Frontier Positions: {self.frontier}')
             """
@@ -226,9 +230,33 @@ class MyAI( AI ):
 											print(f'About to uncover a frontier one in position: {x+1}, {y+1}')
 									self.frontier_ones = []
 									return Action(action, x, y)
-
-
+=======
+					self.__printboard2()
+					print(f'Uncovered Frontier Positions: {self.uncoveredfrontier}')
+					print(f'Covered Frontier Positions: {self.coveredfrontier}')
 			
+			self.__getAllArrangements()
+			self.uncoveredfrontier.clear() # clear frontier for next iteration
+			self.coveredfrontier.clear()
+>>>>>>> a645659788b4ea1eef6c6888b21728d41b56b17c
+
+				
+
+            # This is still in progress
+			#if len(self.neighbors) == 0:
+			#	self.ones = self.__generateOnesList()
+			#	if len(self.ones) > 0:
+			#		first_one = self.ones.pop(0)
+			#		viable_neighbors = self.__getViableNeighbors(first_one[0]-1, first_one[1]-1)
+			#		covered_neighbors = self.__getCoveredNeighbors(first_one[0]-1, first_one[1]-1)
+			#		if self.f:
+			#			print(f'First one:{first_one}')
+			#			print(f'The viable neighbors of first one in CSP check are: {viable_neighbors}')
+			#			print(f'The covered neighbors of first one in CSP check are: {covered_neighbors}')
+
+
+			print("THIS IS BOARD BEFORE WE LOOK FOR PROBABILITY")
+			self.__printboard2()
 			# probability check 
 			if len(self.neighbors) == 0:
 				maxi = self.__getProbability()
@@ -491,8 +519,7 @@ class MyAI( AI ):
 
 		for i in range(self.col):
 			for j in range(self.row):
-				self.board[i][j].val4 = 0
-		
+				self.board[i][j].val4 = 0	
 		return maxi
 
 	def __getCoveredTiles(self): # returns covered tile coordinate in list of tuples whcih are actual game coordinate
@@ -502,6 +529,24 @@ class MyAI( AI ):
 				if self.board[i][j].val1 == '*': # if a tile is covered
 					covered.append((i+1,j+1)) # May have to fix this if row and column dimensions different
 		return covered
+
+	def __getAllArrangements(self): # Meant to enumerate every arrangement of mines
+
+		# possible worlds is self.coveredfrontier
+		assignments = [0,1]
+		# use depth first search to try every possible assignment for self.coveredfrontier
+		# and for each assignment, if it satisfies constraints, it is legal, otherwise it is illegal and not counted
+
+
+	def __nextToUncovered(self, x: int, y: int): # Takes array coords
+		uncoveredneighbors = self.__getUncoveredNeighbors(x,y)
+		if len(uncoveredneighbors) >= 1:
+			return True
+		else:
+			return False
+
+
+		
 
 
 # An Optimization PROBLEM if we ever wanna optimize this in the future
