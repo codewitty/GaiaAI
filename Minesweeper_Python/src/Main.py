@@ -126,7 +126,7 @@ def main():
 			print("---------------Your agent's results:---------------")
 			print("Beginner: {} \tIntermediate: {} \tExpert: {}".format(scoreBeg, scoreInt, scoreExp))
 			print("Cumulative Score: " + str(sumScores))
-			print(f"Code completed in {toc - tic:0.4f} seconds")
+			print(f'Code completed in {toc - tic:0.4f} seconds')
 
 			if outputFile:
 				currDirectory = os.path.dirname(__file__)
