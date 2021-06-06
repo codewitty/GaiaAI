@@ -45,6 +45,7 @@ class MyAI( AI ):
 		self.current = (startX+1, startY+1)
 		self.flag = True
 		self.zeroes.append(self.current)
+		self.bombcount = totalMines
 		#print(f'self.row is {self.row}')
 		#print(f'self.col = {self.col}')
 		
@@ -161,6 +162,7 @@ class MyAI( AI ):
 								if self.f:
 									print(f'Bomb Coordinate is {(neighbor[0],neighbor[1])}')
 								self.board[neighbor[0]-1][neighbor[1]-1].val1 = 'B' # mark it as a bomb
+								self.bombcount -= 1
 								self.__updateboardneighbors(neighbor[0],neighbor[1])
 								self.__updateEffectiveLabel(neighbor[0],neighbor[1])
 				
@@ -181,6 +183,7 @@ class MyAI( AI ):
 							for neighbor in n: # for neighbor in neighbors of any tile that has effective label equal to uncovered neighbors
 								if self.board[neighbor[0]-1][neighbor[1]-1].val1 == '*': # if the neighbor is covered it is a bomb
 									self.board[neighbor[0]-1][neighbor[1]-1].val1 = 'B'
+									self.bombcount -= 1
 									self.__updateboardneighbors(neighbor[0],neighbor[1]) # so we update the labels of everyone around that bomb
 									self.__updateEffectiveLabel(neighbor[0],neighbor[1])
 									self.neighbors = self.__getCoordsofEffectiveZeroes() # after updating, we now get more effective zeroes
@@ -267,10 +270,17 @@ class MyAI( AI ):
 				maxi = self.__getProbability()
 				if maxi == 999: # This is new (means that if there are no covered tiles left, we just leave)
 					return Action(AI.Action.LEAVE)
+				if maxi == -999:
+					for i in range(self.col):
+						for j in range(self.row):
+							if self.board[i][j].val1 == '*':
+								self.neighbors.append((i+1,j+1))
+					continue	
 				if self.f:
 					print(f'Max position: {maxi}') # Issue in probability part
 					print(f'Max Probability: {self.board[maxi[0]][maxi[1]].val4}') # maxi empty
 				self.board[maxi[0]][maxi[1]].val1 = 'B'
+				self.bombcount -= 1
 				self.__updateboardneighbors(maxi[0]+1,maxi[1]+1)
 				self.__updateEffectiveLabel(maxi[0]+1,maxi[1]+1)
 				#print("Checking game board after probability check")
@@ -515,7 +525,8 @@ class MyAI( AI ):
 			print(f'Max Value: {maxval}')
 			print(f'Max Co-ords: {maxi}')
 
-		if len(maxi) == 0: # if wall of bombs surround covered tiles,we must do random
+		if len(maxi) == 0 and self.bombcount >= 1: # if wall of bombs surround covered tiles, we mark random tile as a bomb 
+			#print(f'Bomb count is {self.bombcount}')
 			allCovered = self.__getCoveredTiles()
 			if len(allCovered) == 0: # No covered tiles left
 				return 999
@@ -524,6 +535,8 @@ class MyAI( AI ):
 				randomval = random.randint(0,len(allCovered)-1)
 				maxi.append(allCovered[0][0]-1)
 				maxi.append(allCovered[0][1]-1)
+		elif len(maxi) == 0 and self.bombcount == 0:
+			return -999
 
 		for i in range(self.col):
 			for j in range(self.row):
