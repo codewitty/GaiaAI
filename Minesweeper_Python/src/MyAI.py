@@ -35,7 +35,7 @@ class MyAI( AI ):
 		self.total = 0
 		self.ones = []
 		self.frontier = []
-		self.frontier_ones = []
+		self.frontier_check = []
 		self.coveredfrontier = []
 		self.uncoveredfrontier = []
 		self.row = rowDimension
@@ -50,6 +50,14 @@ class MyAI( AI ):
 		
 		# Changes I made are below
 		self.__initializeboard() # NEW
+		#print(self.board)
+		#i = 0
+		"""
+		while i < self.row:
+			for node in self.board[i]:
+				print(node.val1, node.val2, node.val3, node.val4)
+			i+=1
+		"""
 		self.timestoUncover = (rowDimension * colDimension)
 		self.__updateboardneighbors(self.current[0], self.current[1])
 		self.neighbors = self.__getCoveredNeighbors(self.current[0]-1, self.current[1]-1)
@@ -192,19 +200,17 @@ class MyAI( AI ):
 
 			# Get all ones, generate list of neighbors, and find a subset if possible
 			if len(self.neighbors) == 0:
-				self.ones = self.__getFrontierOnes()
-				if len(self.ones) > 0:
-					for first_one in self.ones:
-						#viable_neighbors = self.__getViableNeighbors(first_one[0]-1, first_one[1]-1)
-						covered_neighbors = self.__getCoveredNeighbors(first_one[0]-1, first_one[1]-1)
-						self.frontier_ones.append(covered_neighbors)
+				self.frontier = self.__getFrontierOnes()
+				if len(self.frontier) > 0:
 					if self.f:
-						print(f'Frontier ones list:{self.frontier_ones}')
-						#print(f'First one:{first_one}')
-						#print(f'The viable neighbors of first one in CSP check are: {viable_neighbors}')
-						#print(f'The covered neighbors of first one in CSP check are: {covered_neighbors}')
-					for one in self.frontier_ones:
-						for two in self.frontier_ones:
+						print(f'Frontier Positions: {self.frontier}')
+					for node in self.frontier:
+						covered_neighbors = self.__getCoveredNeighbors(node[0]-1, node[1]-1)
+						self.frontier_check.append(covered_neighbors)
+					if self.f:
+						print(f'Frontier check set list:{self.frontier_check}')
+					for one in self.frontier_check:
+						for two in self.frontier_check:
 							if set(one).issubset(set(two)) and one != two:
 								if self.f:
 									print(f'One: {one}')
@@ -228,17 +234,15 @@ class MyAI( AI ):
 									action = AI.Action.UNCOVER
 									if self.f:
 											print(f'About to uncover a frontier one in position: {x+1}, {y+1}')
-									self.frontier_ones = []
+									self.frontier_check = []
 									return Action(action, x, y)
-=======
-					self.__printboard2()
-					print(f'Uncovered Frontier Positions: {self.uncoveredfrontier}')
-					print(f'Covered Frontier Positions: {self.coveredfrontier}')
+					#if self.f:
+						#print(f'Uncovered Frontier Positions: {self.uncoveredfrontier}')
+						#print(f'Covered Frontier Positions: {self.coveredfrontier}')
 			
-			self.__getAllArrangements()
-			self.uncoveredfrontier.clear() # clear frontier for next iteration
-			self.coveredfrontier.clear()
->>>>>>> a645659788b4ea1eef6c6888b21728d41b56b17c
+			#self.__getAllArrangements()
+			#self.uncoveredfrontier.clear() # clear frontier for next iteration
+			#self.coveredfrontier.clear()
 
 				
 
@@ -255,8 +259,9 @@ class MyAI( AI ):
 			#			print(f'The covered neighbors of first one in CSP check are: {covered_neighbors}')
 
 
-			print("THIS IS BOARD BEFORE WE LOOK FOR PROBABILITY")
-			self.__printboard2()
+			if self.f:
+				print("THIS IS BOARD BEFORE WE LOOK FOR PROBABILITY")
+				self.__printboard2()
 			# probability check 
 			if len(self.neighbors) == 0:
 				maxi = self.__getProbability()
@@ -324,16 +329,19 @@ class MyAI( AI ):
 
 	def __getFrontier(self, x: int, y: int) -> List:
 		""" Return a list of all frontier positions on present board """
-		neighbors = self.__getneighbors(x+1, y+1)
-		covered_neighbors = [i for i in neighbors if self.board[i[0]-1][i[1]-1].val1 == '*' and self.board[i[0]-1][i[1]-1].val1 != 'B']
-		return covered_neighbors
+		frontier =[]
+		for i in range(self.col):
+			for j in range(self.row):	
+				if (self.board[i][j].val1) != '*' and self.board[i][j].val1 != 'B' and (self.board[i][j].val3) != 0:
+					frontier.append((i+1,j+1))
+		return frontier
 
 	def __getFrontierOnes(self) -> List:
 		""" Return a list of all frontier positions on present board """
 		ones = []
 		for i in range(self.col):
 			for j in range(self.row):	
-				if (self.board[i][j].val1) == 1 and (self.board[i][j].val3) != 0:
+				if (self.board[i][j].val2) == 1 and (self.board[i][j].val3) != 0:
 					ones.append((i+1,j+1))
 		return ones
 
