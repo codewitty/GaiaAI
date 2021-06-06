@@ -207,11 +207,13 @@ class MyAI( AI ):
 				if len(self.frontier) > 0:
 					if self.f:
 						print(f'Frontier Positions: {self.frontier}')
+						print(f'Frontier Position list length:{len(self.frontier)}')
 					for node in self.frontier:
 						covered_neighbors = self.__getCoveredNeighbors(node[0]-1, node[1]-1)
 						self.frontier_check.append(covered_neighbors)
 					if self.f:
 						print(f'Frontier check set list:{self.frontier_check}')
+						print(f'Frontier check set list length:{len(self.frontier_check)}')
 					for one in self.frontier_check:
 						for two in self.frontier_check:
 							if set(one).issubset(set(two)) and one != two:
@@ -231,14 +233,15 @@ class MyAI( AI ):
 												print(f'Two.2: {two_new}')
 									self.neighbors = two_new
 								if len(self.neighbors) > 0:
+									self.frontier_check.clear()
 									self.current = self.neighbors.pop(0)
 									x = self.current[0] - 1
 									y = self.current[1] - 1
 									action = AI.Action.UNCOVER
 									if self.f:
 											print(f'About to uncover a frontier one in position: {x+1}, {y+1}')
-									self.frontier_check = []
 									return Action(action, x, y)
+					self.frontier_check.clear()
 					#if self.f:
 						#print(f'Uncovered Frontier Positions: {self.uncoveredfrontier}')
 						#print(f'Covered Frontier Positions: {self.coveredfrontier}')
